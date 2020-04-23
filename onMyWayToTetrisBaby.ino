@@ -103,8 +103,6 @@ boolean alive;
 
 Tetrimino *o;
 
-
-
 // Tetrimino *l;
 
 void setup()
@@ -114,16 +112,16 @@ void setup()
   o = new Tetrimino();
   // l = new Tetrimino();
 
-const int oRows = 2;
-const int oCols = 2;
-boolean oArray[oRows][oCols] = {{
-                                    true,
-                                    true,
-                                },
-                                {
-                                    true,
-                                    true,
-                                }};
+  const int oRows = 2;
+  const int oCols = 2;
+  boolean oArray[oRows][oCols] = {{
+                                      true,
+                                      true,
+                                  },
+                                  {
+                                      true,
+                                      true,
+                                  }};
 
   boolean *oPtr[oRows];
   for (size_t i = 0; i < oRows; i++)
@@ -132,18 +130,16 @@ boolean oArray[oRows][oCols] = {{
   }
   o->initialise(oPtr, oRows, oCols, Yellow, multiplier);
 
-// const int lRows = 4;
-// const int lCols = 4;
-// boolean lArray[lRows][lCols] = {{false, false, false, false}, {true, true, true, true}, {false, false, false, false}, {false, false, false, false}};
+  // const int lRows = 4;
+  // const int lCols = 4;
+  // boolean lArray[lRows][lCols] = {{false, false, false, false}, {true, true, true, true}, {false, false, false, false}, {false, false, false, false}};
 
-
-
-//   boolean *lPtr[lRows];
-//   for (size_t i = 0; i < lRows; i++)
-//   {
-//     lPtr[i] = lArray[i];
-//   }
-//   l->initialise(lPtr, lRows, lCols, Blue, multiplier);
+  //   boolean *lPtr[lRows];
+  //   for (size_t i = 0; i < lRows; i++)
+  //   {
+  //     lPtr[i] = lArray[i];
+  //   }
+  //   l->initialise(lPtr, lRows, lCols, Blue, multiplier);
 
   //Tetrimino line;
   //square.colour = CYAN;
@@ -188,16 +184,28 @@ void spawnTetrimino(Tetrimino *tetrimino)
 
   horizontalDotPosition = horizontalStartPosition;
   for (int m = 0; m < tetrimino->rows; m++)
+  {
     for (int n = 0; n < tetrimino->cols; n++)
+    {
       // There may be a way to save time here by only printing to pixels that are new...
+      Serial.print("tetris grid : ");
+
       Serial.println(tetrimino->grid[n][m]);
+      Serial.println("");
       if (tetrimino->grid[n][m])
-                  for (y = 0; y < multiplier; y++)
+      {
+        {
+          for (y = 0; y < multiplier; y++)
+          {
+            for (k = 0; k < multiplier; k++)
             {
-                for (k = 0; k < multiplier; k++)
-                {
-        TFTscreen.point(verticalDotPosition + (multiplier*n ) + y , horizontalDotPosition + (multiplier*m)+k);
-                }}
+              TFTscreen.point(verticalDotPosition + (multiplier * n) + y, horizontalDotPosition + (multiplier * m) + k);
+            }
+          }
+        }
+      }
+    }
+  }
   previousTime = millis();
   while (alive)
   {
@@ -221,35 +229,39 @@ void forceDownTetrimino(Tetrimino *tetrimino)
   else
   {
     long timeBefore = millis();
-    int multi,k;
+    int multi, k;
     for (multi = 0; multi < multiplier; multi++)
     {
       verticalDotPosition = verticalDotPosition - speed;
       for (int n = 0; n < tetrimino->cols; n++)
       {
-        if (tetrimino->grid[tetrimino->rows - 1][n]){
-      
-                for (k = 0; k < multiplier; k++)
-                {
-        TFTscreen.stroke(0, 0, 0);
-        TFTscreen.point(previousVerticalDotPosition, previousHorizontalDotPosition + (multiplier*n)+k); // color in the old point
-        TFTscreen.stroke(tetrimino->colour);
-        TFTscreen.point(verticalDotPosition - tetrimino->rows, previousHorizontalDotPosition  + (multiplier*n ) +k ) ; // color in the new point
-                }
-      }
-      
-      else{
+        if (tetrimino->grid[tetrimino->rows - 1][n])
+        {
 
-        Serial.println("false?");
-      }}
-      
+          for (k = 0; k < multiplier; k++)
+          {
+            // Serial.println("colour in");
+            TFTscreen.stroke(0, 0, 0);
+            TFTscreen.point(previousVerticalDotPosition, previousHorizontalDotPosition + (multiplier * n) + k); // color in the old point
+            TFTscreen.stroke(tetrimino->colour);
+            TFTscreen.point(verticalDotPosition - tetrimino->rows, previousHorizontalDotPosition + (multiplier * n) + k); // color in the new point
+          }
+        }
+
+        else
+        {
+
+          // Serial.println("false?");
+        }
+      }
+
       previousVerticalDotPosition = verticalDotPosition;
       previousHorizontalDotPosition = horizontalDotPosition;
     }
     long timeTook = millis() - timeBefore;
-    Serial.println(timeTook);
+    // Serial.println(timeTook);
   }
-  
+
   delay(5);
 }
 
@@ -284,7 +296,7 @@ void moveTetrimino(Tetrimino *tetrimino)
   }
   if (upButtonState == HIGH)
   {
-    //Cannot go up- implement hard drop... 
+    //Cannot go up- implement hard drop...
 
     // if (verticalDotPosition + speed == linePosVerticalMaxUp)
     // {

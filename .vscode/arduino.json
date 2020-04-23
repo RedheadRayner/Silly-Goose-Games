@@ -2,5 +2,5 @@
     "sketch": "onMyWayToTetrisBaby.ino",
     "programmer": "AVR ISP",
     "board": "arduino:avr:uno",
-    "port": "COM6"
+    "port": "COM5"
 }
