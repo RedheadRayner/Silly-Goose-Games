@@ -87,10 +87,10 @@ int horizontalPlayFieldStart = 1;
 int heightPlayField = (20 * multiplier) + 2;
 int widthPlayField = (10 * multiplier) + 2;
 
-int linePosHorizontalMaxRight = horizontalPlayFieldStart + widthPlayField - 1;
+int linePosHorizontalMaxRight = horizontalPlayFieldStart + widthPlayField;
 int linePosVerticalMaxUp = verticalPlayFieldStart + heightPlayField - 1;
 int linePosVerticalMaxDown = verticalPlayFieldStart + 1;
-int linePosHorizontalMaxLeft = horizontalPlayFieldStart + 1;
+int linePosHorizontalMaxLeft = horizontalPlayFieldStart;
 
 int verticalStartPosition = linePosVerticalMaxUp + (2 * multiplier);
 
@@ -188,10 +188,6 @@ void spawnTetrimino(Tetrimino *tetrimino)
     for (int n = 0; n < tetrimino->cols; n++)
     {
       // There may be a way to save time here by only printing to pixels that are new...
-      Serial.print("tetris grid : ");
-
-      Serial.println(tetrimino->grid[n][m]);
-      Serial.println("");
       if (tetrimino->grid[n][m])
       {
         {
@@ -206,6 +202,9 @@ void spawnTetrimino(Tetrimino *tetrimino)
       }
     }
   }
+
+  // some coloured pixels are being printed off screen and due to these being new, they are not coloured again...
+  Serial.println(horizontalDotPosition + speed + (tetrimino->blocksRight() * multiplier));
   previousTime = millis();
   while (alive)
   {
@@ -221,7 +220,7 @@ void spawnTetrimino(Tetrimino *tetrimino)
 
 void forceDownTetrimino(Tetrimino *tetrimino)
 {
-  if (verticalDotPosition - (speed * multiplier) < linePosVerticalMaxDown)
+  if (verticalDotPosition - ((speed+tetrimino->blocksDown()) * multiplier) < linePosVerticalMaxDown)
   {
 
     alive = false;
@@ -235,28 +234,21 @@ void forceDownTetrimino(Tetrimino *tetrimino)
       verticalDotPosition = verticalDotPosition - speed;
       for (int n = 0; n < tetrimino->cols; n++)
       {
-        if (tetrimino->grid[tetrimino->rows - 1][n])
-        {
 
-          for (k = 0; k < multiplier; k++)
+        for (k = 0; k < multiplier; k++)
+        {
+          // Serial.println("colour in");
+          TFTscreen.stroke(0, 0, 0);
+          TFTscreen.point(previousVerticalDotPosition, horizontalDotPosition + (multiplier * n) + k); // color in the old point
+          if (tetrimino->grid[tetrimino->rows - 1][n])
           {
-            // Serial.println("colour in");
-            TFTscreen.stroke(0, 0, 0);
-            TFTscreen.point(previousVerticalDotPosition, previousHorizontalDotPosition + (multiplier * n) + k); // color in the old point
             TFTscreen.stroke(tetrimino->colour);
-            TFTscreen.point(verticalDotPosition - tetrimino->rows, previousHorizontalDotPosition + (multiplier * n) + k); // color in the new point
+            TFTscreen.point(verticalDotPosition - (multiplier * tetrimino->rows), horizontalDotPosition + (multiplier * n) + k); // color in the new point
           }
-        }
-
-        else
-        {
-
-          // Serial.println("false?");
         }
       }
 
       previousVerticalDotPosition = verticalDotPosition;
-      previousHorizontalDotPosition = horizontalDotPosition;
     }
     long timeTook = millis() - timeBefore;
     // Serial.println(timeTook);
@@ -277,20 +269,32 @@ void moveTetrimino(Tetrimino *tetrimino)
   {
     //TODO - implement faster fall
 
-    if (verticalDotPosition - speed == linePosVerticalMaxDown)
+    if (verticalDotPosition - speed - (tetrimino->blocksDown()*multiplier) <= linePosVerticalMaxDown)
     {
 
       Serial.println("MAX_DOWN");
     }
     else
     {
-      verticalDotPosition = verticalDotPosition - speed;
-      for (int n = 0; n < tetrimino->cols; n++)
+      int multi, k;
+      for (multi = 0; multi < multiplier; multi++)
       {
-        TFTscreen.stroke(0, 0, 0);
-        TFTscreen.point(previousVerticalDotPosition, previousHorizontalDotPosition + n); // color in the old point
-        TFTscreen.stroke(tetrimino->colour);
-        TFTscreen.point(verticalDotPosition - tetrimino->rows, previousHorizontalDotPosition + n); // color in the new point
+        verticalDotPosition = verticalDotPosition - speed;
+        for (int n = 0; n < tetrimino->cols; n++)
+        {
+
+          for (k = 0; k < multiplier; k++)
+          {
+            TFTscreen.stroke(0, 0, 0);
+            TFTscreen.point(previousVerticalDotPosition, horizontalDotPosition + (multiplier * n) + k); // color in the old point
+            if (tetrimino->grid[tetrimino->rows - 1][n])
+            {
+              TFTscreen.stroke(tetrimino->colour);
+              TFTscreen.point(verticalDotPosition - (multiplier * tetrimino->rows), horizontalDotPosition + (multiplier * n) + k); // color in the new point
+            }
+          }
+        }
+        previousVerticalDotPosition = verticalDotPosition;
       }
     }
   }
@@ -317,46 +321,75 @@ void moveTetrimino(Tetrimino *tetrimino)
   if (leftButtonState == HIGH)
   {
 
-    if (horizontalDotPosition - speed == linePosHorizontalMaxLeft)
+    if (horizontalDotPosition - speed <= linePosHorizontalMaxLeft)
     {
       Serial.println("MAX_LEFT");
     }
     else
     {
-      horizontalDotPosition = horizontalDotPosition - speed;
-      for (int m = 0; m < tetrimino->rows; m++)
+
+      int multi, k;
+      for (multi = 0; multi < multiplier; multi++)
       {
-        TFTscreen.stroke(0, 0, 0);
-        TFTscreen.point(previousVerticalDotPosition - m, previousHorizontalDotPosition + tetrimino->cols); // color in the old point
-        TFTscreen.stroke(tetrimino->colour);
-        TFTscreen.point(previousVerticalDotPosition - m, horizontalDotPosition); // color in the new point
+        horizontalDotPosition = horizontalDotPosition - speed;
+
+        for (int m = 0; m < tetrimino->rows; m++)
+        {
+
+          for (k = 0; k < multiplier; k++)
+          {
+            TFTscreen.stroke(0, 0, 0);
+            TFTscreen.point(verticalDotPosition - (multiplier * m) - k, previousHorizontalDotPosition + (multiplier * tetrimino->cols)); // color in the old point
+            if (tetrimino->grid[m][0])
+            {
+              TFTscreen.stroke(tetrimino->colour);
+              TFTscreen.point(verticalDotPosition - (multiplier * m) - k, horizontalDotPosition); // color in the new point
+            }
+          }
+        }
+
+        previousHorizontalDotPosition = horizontalDotPosition;
       }
     }
   }
   if (rightButtonState == HIGH)
   {
+    Serial.println(horizontalDotPosition);
 
-    if (horizontalDotPosition + speed == linePosHorizontalMaxRight)
+    if (horizontalDotPosition + speed + (tetrimino->blocksRight() * multiplier) >= linePosHorizontalMaxRight)
 
     {
       Serial.println("MAX_RIGHT");
     }
     else
     {
-      horizontalDotPosition = horizontalDotPosition + speed;
-      for (int m = 0; m < tetrimino->rows; m++)
+
+      int multi, k;
+      for (multi = 0; multi < multiplier; multi++)
       {
-        TFTscreen.stroke(0, 0, 0);
-        TFTscreen.point(previousVerticalDotPosition - m, previousHorizontalDotPosition); // color in the old point
-        TFTscreen.stroke(tetrimino->colour);
-        TFTscreen.point(previousVerticalDotPosition - m, horizontalDotPosition + tetrimino->cols); // color in the new point
+        horizontalDotPosition = horizontalDotPosition + speed;
+        for (int m = 0; m < tetrimino->rows; m++)
+        {
+
+          for (k = 0; k < multiplier; k++)
+          {
+
+            TFTscreen.stroke(0, 0, 0);
+            TFTscreen.point(verticalDotPosition - (multiplier * m) - k, previousHorizontalDotPosition); // color in the old point
+
+            if (tetrimino->grid[m][tetrimino->cols - 1])
+            {
+              TFTscreen.stroke(tetrimino->colour);
+              TFTscreen.point(verticalDotPosition - (multiplier * m) - k, horizontalDotPosition + (multiplier * tetrimino->cols)); // color in the new point
+            }
+          }
+        }
+        previousHorizontalDotPosition = horizontalDotPosition;
       }
     }
   }
-  previousVerticalDotPosition = verticalDotPosition;
-  previousHorizontalDotPosition = horizontalDotPosition;
   previousLevel = level;
-  delay(5);
+  delay(50);
 }
 
 double calculateFallSpeed(int level)
