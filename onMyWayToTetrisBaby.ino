@@ -125,7 +125,7 @@ void setup()
   {
     oPtr[i] = oArray[i];
   }
-  o.initialise(oPtr, oRows, oCols, Yellow, multiplier);
+  o.initialise(oPtr, oRows, oCols, White, multiplier);
 
   const int lRows = 4;
   const int lCols = 4;
@@ -136,7 +136,7 @@ void setup()
   {
     lPtr[i] = lArray[i];
   }
-  l.initialise(lPtr, lRows, lCols, Blue, multiplier);
+  l.initialise(lPtr, lRows, lCols, White, multiplier);
 
   // initialize the pushbutton pin as an input:
   pinMode(downButtonPin, INPUT);
@@ -230,7 +230,6 @@ void forceDownTetrimino(Tetrimino tetrimino)
         for (k = 0; k < multiplier; k++)
         {
           TFTscreen.point(previousVerticalDotPosition - multi, horizontalDotPosition + (multiplier * n) + k); // color in the old point
-
         }
       }
     }
@@ -243,6 +242,7 @@ void forceDownTetrimino(Tetrimino tetrimino)
       {
         if (tetrimino.grid[n][m])
         {
+
           {
             for (y = 0; y < multiplier; y++)
             {
@@ -259,7 +259,6 @@ void forceDownTetrimino(Tetrimino tetrimino)
     long timeTook = millis() - timeBefore;
     // Serial.println(timeTook);
   }
-
   delay(5);
 }
 
@@ -295,6 +294,7 @@ void moveTetrimino(Tetrimino tetrimino)
             TFTscreen.point(previousVerticalDotPosition, horizontalDotPosition + (multiplier * n) + k); // color in the old point
             if (tetrimino.grid[tetrimino.rows - 1][n])
             {
+
               TFTscreen.stroke(tetrimino.colour);
               TFTscreen.point(verticalDotPosition - (multiplier * tetrimino.rows), horizontalDotPosition + (multiplier * n) + k); // color in the new point
             }

@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "tetrimino.h"
 
-Tetrimino::initialise(boolean **gridPass, int rowNum, int colNum, uint16_t tetColour, int multiplier)
+void Tetrimino::initialise(boolean **gridPass, int rowNum, int colNum, uint16_t tetColour, int multiplier)
 {
 
     this->rows = rowNum;
@@ -48,7 +48,7 @@ Tetrimino::initialise(boolean **gridPass, int rowNum, int colNum, uint16_t tetCo
         }
     }
     this->grid = array;
-    this->multiGrid = array;
+    this->multiGrid = array_multi;
     this->colour = tetColour;
 }
 
