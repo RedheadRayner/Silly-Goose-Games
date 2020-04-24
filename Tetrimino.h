@@ -4,7 +4,7 @@
 class Tetrimino {
 
   public:
-    virtual void initialise(boolean **, int, int, uint16_t, int );
+    initialise(boolean **, int, int, uint16_t, int );
     virtual int blocksRight();
     virtual int blocksDown();
     int rows;
