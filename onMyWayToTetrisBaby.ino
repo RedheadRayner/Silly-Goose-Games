@@ -33,9 +33,9 @@ const int upButtonPin = A0;
 #define Olive 0x7BE0     /* 128, 128,   0 */
 #define LightGrey 0xC618 /* 192, 192, 192 */
 #define DarkGrey 0x7BEF  /* 128, 128, 128 */
-// #define Red            0x001F      /*   0,   0, 255 */
-// #define Green           0x07E0      /*   0, 255,   0 */
-#define Todo 0x07FF /*   0, 255, 255 */
+#define Red 0x001F       /*   0,   0, 255 */
+#define Green 0x07E0     /*   0, 255,   0 */
+#define Todo 0x07FF      /*   0, 255, 255 */
 // #define DarkBlue             0xF800      /* 255,   0,   0 */
 // #define Magenta         0xF81F      /* 255,   0, 255 */
 #define Blue 0xFFE0  /* 255, 255,   0 */
@@ -88,11 +88,11 @@ int heightPlayField = (20 * multiplier) + 2;
 int widthPlayField = (10 * multiplier) + 2;
 
 int linePosHorizontalMaxRight = horizontalPlayFieldStart + widthPlayField;
-int linePosVerticalMaxUp = verticalPlayFieldStart + heightPlayField - 1;
-int linePosVerticalMaxDown = verticalPlayFieldStart + 1;
+int linePosVerticalMaxUp = verticalPlayFieldStart +1;
+int linePosVerticalMaxDown = verticalPlayFieldStart + heightPlayField - 1;
 int linePosHorizontalMaxLeft = horizontalPlayFieldStart;
 
-int verticalStartPosition = linePosVerticalMaxUp + (2 * multiplier);
+int verticalStartPosition = linePosVerticalMaxUp - (2 * multiplier);
 
 int horizontalStartPosition = linePosHorizontalMaxLeft + (widthPlayField / 2) - multiplier;
 
@@ -109,34 +109,46 @@ void setup()
   Serial.begin(9600);
   Serial.println("start");
 
+  // Put this line at the beginning of every sketch that uses the GLCD:
+  TFTscreen.begin();
+  TFTscreen.setRotation(2);
+
+  // TFTscreen.invertDisplay(0);
+  // clear the screen with a black background
+  TFTscreen.background(0, 0, 0);
+  TFTscreen.stroke(255, 255, 255);
+
   const int oRows = 2;
   const int oCols = 2;
-  boolean oArray[oRows][oCols] = {{
-                                      true,
-                                      true,
-                                  },
-                                  {
-                                      true,
-                                      true,
-                                  }};
+  boolean oArray[oRows * oCols] = {
+      true,
+      true,
+      true,
+      true,
+  };
 
-  boolean *oPtr[oRows];
-  for (size_t i = 0; i < oRows; i++)
-  {
-    oPtr[i] = oArray[i];
-  }
-  o.initialise(oPtr, oRows, oCols, White, multiplier);
+  boolean *oPtr = oArray;
+  // for (size_t i = 0; i < oRows * oCols; i++)
+  // {
+  //   oPtr[i] = &oArray[i];
+  // }
+  Serial.println("o");
+  o.initialise(oPtr, oRows, oCols, Yellow, multiplier);
 
-  const int lRows = 4;
+  const int lRows = 3;
   const int lCols = 4;
-  boolean lArray[lRows][lCols] = {{false, false, false, false}, {true, true, true, true}, {false, false, false, false}, {false, false, false, false}};
+  boolean lArray[lRows * lCols] = {false, false, false, false,
+                                   true, true, true, true,
+                                  //  false, false, false, false,
+                                   false, false, false, false};
 
-  boolean *lPtr[lRows];
-  for (size_t i = 0; i < lRows; i++)
-  {
-    lPtr[i] = lArray[i];
-  }
-  l.initialise(lPtr, lRows, lCols, White, multiplier);
+  boolean *lPtr = lArray;
+  // for (size_t i = 0; i < oRows * oCols; i++)
+  // {
+  //   lPtr[i] = &lArray[i];
+  // }
+    Serial.println("l");
+  l.initialise(lPtr, lRows, lCols, Blue, multiplier);
 
   // initialize the pushbutton pin as an input:
   pinMode(downButtonPin, INPUT);
@@ -144,20 +156,15 @@ void setup()
   pinMode(rightButtonPin, INPUT);
   pinMode(upButtonPin, INPUT);
 
-  // Put this line at the beginning of every sketch that uses the GLCD:
-  TFTscreen.begin();
-
-  // TFTscreen.invertDisplay(0);
-  // clear the screen with a black background
-  TFTscreen.background(0, 0, 0);
-  TFTscreen.stroke(255, 255, 255);
-
   //screen.rect(xStart, yStart, width, height);
   //xStart : int, the horizontal position where the line starts
   //yStart : int, the vertical position where the line starts
   //width : int, the width of the rectangle
   //height : int, the height of the rectangle
-  TFTscreen.rect(verticalPlayFieldStart, horizontalPlayFieldStart, heightPlayField, widthPlayField);
+  TFTscreen.rect(horizontalPlayFieldStart , verticalPlayFieldStart ,  widthPlayField, heightPlayField);
+
+  
+  TFTscreen.rect(10, 10 ,  10, 10);
 }
 
 void loop()
@@ -177,24 +184,6 @@ void spawnTetrimino(Tetrimino tetrimino)
   verticalDotPosition = verticalStartPosition;
 
   horizontalDotPosition = horizontalStartPosition;
-  // for (int m = 0; m < tetrimino.rows; m++)
-  // {
-  //   for (int n = 0; n < tetrimino.cols; n++)
-  //   {
-  //     if (tetrimino.grid[n][m])
-  //     {
-  //       {
-  //         for (y = 0; y < multiplier; y++)
-  //         {
-  //           for (k = 0; k < multiplier; k++)
-  //           {
-  //             TFTscreen.point(verticalDotPosition + (multiplier * n) + y, horizontalDotPosition + (multiplier * m) + k);
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
 
   previousTime = millis();
   while (alive)
@@ -211,50 +200,15 @@ void spawnTetrimino(Tetrimino tetrimino)
 
 void forceDownTetrimino(Tetrimino tetrimino)
 {
-  if (verticalDotPosition - ((speed + tetrimino.blocksDown()) * multiplier) < linePosVerticalMaxDown)
+  if (verticalDotPosition + ((speed - tetrimino.blocksDown()) * multiplier) > linePosVerticalMaxDown)
   {
 
     alive = false;
   }
   else
   {
-    TFTscreen.stroke(0, 0, 0);
-    verticalDotPosition = verticalDotPosition - (speed * multiplier);
     long timeBefore = millis();
-    int multi, y, k;
-    for (multi = 0; multi < multiplier; multi++)
-    {
-      for (int n = 0; n < tetrimino.cols; n++)
-      {
-
-        for (k = 0; k < multiplier; k++)
-        {
-          TFTscreen.point(previousVerticalDotPosition - multi, horizontalDotPosition + (multiplier * n) + k); // color in the old point
-        }
-      }
-    }
-    previousVerticalDotPosition = verticalDotPosition;
-
-    TFTscreen.stroke(tetrimino.colour);
-    for (int m = 0; m < tetrimino.rows; m++)
-    {
-      for (int n = 0; n < tetrimino.cols; n++)
-      {
-        if (tetrimino.grid[n][m])
-        {
-
-          {
-            for (y = 0; y < multiplier; y++)
-            {
-              for (k = 0; k < multiplier; k++)
-              {
-                TFTscreen.point(verticalDotPosition - (multiplier * n) - y, horizontalDotPosition + (multiplier * m) + k);
-              }
-            }
-          }
-        }
-      }
-    }
+    movedDown( tetrimino);
 
     long timeTook = millis() - timeBefore;
     // Serial.println(timeTook);
@@ -274,95 +228,39 @@ void moveTetrimino(Tetrimino tetrimino)
   {
     //TODO - implement faster fall
 
-    if (verticalDotPosition - speed - (tetrimino.blocksDown() * multiplier) <= linePosVerticalMaxDown)
+    if (verticalDotPosition + ((speed - tetrimino.blocksDown()) * multiplier) > linePosVerticalMaxDown)
     {
 
       Serial.println("MAX_DOWN");
     }
     else
     {
-      int multi, k;
-      for (multi = 0; multi < multiplier; multi++)
-      {
-        verticalDotPosition = verticalDotPosition - speed;
-        for (int n = 0; n < tetrimino.cols; n++)
-        {
 
-          for (k = 0; k < multiplier; k++)
-          {
-            TFTscreen.stroke(0, 0, 0);
-            TFTscreen.point(previousVerticalDotPosition, horizontalDotPosition + (multiplier * n) + k); // color in the old point
-            if (tetrimino.grid[tetrimino.rows - 1][n])
-            {
-
-              TFTscreen.stroke(tetrimino.colour);
-              TFTscreen.point(verticalDotPosition - (multiplier * tetrimino.rows), horizontalDotPosition + (multiplier * n) + k); // color in the new point
-            }
-          }
-        }
-        previousVerticalDotPosition = verticalDotPosition;
-      }
+      movedDown( tetrimino);
     }
   }
   if (upButtonState == HIGH)
   {
     //Cannot go up- implement hard drop...
-
-    // if (verticalDotPosition + speed == linePosVerticalMaxUp)
-    // {
-    //   Serial.println("MAX_UP");
-    // }
-    // else
-    // {
-    //   verticalDotPosition = verticalDotPosition + speed;
-    //   for (int n = 0; n < tetrimino->cols; n++)
-    //   {
-    //     TFTscreen.stroke(0, 0, 0);
-    //     TFTscreen.point(previousVerticalDotPosition - tetrimino->rows, previousHorizontalDotPosition + n); // color in the old point
-    //     TFTscreen.stroke(tetrimino->colour);
-    //     TFTscreen.point(verticalDotPosition, previousHorizontalDotPosition + n); // color in the new point
-    //   }
-    // }
   }
   if (leftButtonState == HIGH)
   {
 
-    if (horizontalDotPosition - speed <= linePosHorizontalMaxLeft)
+    if (horizontalDotPosition - ( speed * multiplier) <= linePosHorizontalMaxLeft)
     {
       Serial.println("MAX_LEFT");
     }
     else
     {
 
-      int multi, k;
-      for (multi = 0; multi < multiplier; multi++)
-      {
-        horizontalDotPosition = horizontalDotPosition - speed;
-
-        for (int m = 0; m < tetrimino.rows; m++)
-        {
-
-          for (k = 0; k < multiplier; k++)
-          {
-            TFTscreen.stroke(0, 0, 0);
-            TFTscreen.point(verticalDotPosition - (multiplier * m) - k, previousHorizontalDotPosition + (multiplier * tetrimino.cols)); // color in the old point
-            if (tetrimino.grid[m][0])
-            {
-              TFTscreen.stroke(tetrimino.colour);
-              TFTscreen.point(verticalDotPosition - (multiplier * m) - k, horizontalDotPosition); // color in the new point
-            }
-          }
-        }
-
-        previousHorizontalDotPosition = horizontalDotPosition;
-      }
+      movedLeft(tetrimino);
     }
   }
   if (rightButtonState == HIGH)
   {
     Serial.println(horizontalDotPosition);
 
-    if (horizontalDotPosition + speed + (tetrimino.blocksRight() * multiplier) >= linePosHorizontalMaxRight)
+    if (horizontalDotPosition +( ( speed + tetrimino.blocksRight()) * multiplier) >= linePosHorizontalMaxRight)
 
     {
       Serial.println("MAX_RIGHT");
@@ -370,35 +268,63 @@ void moveTetrimino(Tetrimino tetrimino)
     else
     {
 
-      int multi, k;
-      for (multi = 0; multi < multiplier; multi++)
-      {
-        horizontalDotPosition = horizontalDotPosition + speed;
-        for (int m = 0; m < tetrimino.rows; m++)
-        {
-
-          for (k = 0; k < multiplier; k++)
-          {
-
-            TFTscreen.stroke(0, 0, 0);
-            TFTscreen.point(verticalDotPosition - (multiplier * m) - k, previousHorizontalDotPosition); // color in the old point
-
-            if (tetrimino.grid[m][tetrimino.cols - 1])
-            {
-              TFTscreen.stroke(tetrimino.colour);
-              TFTscreen.point(verticalDotPosition - (multiplier * m) - k, horizontalDotPosition + (multiplier * tetrimino.cols)); // color in the new point
-            }
-          }
-        }
-        previousHorizontalDotPosition = horizontalDotPosition;
-      }
+      movedRight(tetrimino);
     }
   }
   previousLevel = level;
-  delay(5);
+  delay(50);
 }
 
 double calculateFallSpeed(int level)
 {
   return pow(0.8 - ((level - 1) * 0.007), (level - 1));
+}
+
+void printTetrimino( Tetrimino tetrimino)
+{
+  for (int m = 0; m < tetrimino.rows; m++)
+  {
+    for (int n = 0; n < tetrimino.cols; n++)
+    {
+      
+      if (tetrimino.booleanOfGrid(m, n))
+      {
+
+        TFTscreen.fillRect( horizontalDotPosition + (multiplier * m),verticalDotPosition + (multiplier * n), multiplier, multiplier, tetrimino.colour);
+      }
+      else
+      {
+
+        TFTscreen.fillRect(horizontalDotPosition + (multiplier * m),verticalDotPosition + (multiplier * n),  multiplier, multiplier, Black);
+      }
+    }
+  }
+}
+
+void movedRight(Tetrimino tetrimino)
+{
+  horizontalDotPosition = horizontalDotPosition + (speed*multiplier);
+
+  TFTscreen.fillRect( previousHorizontalDotPosition,verticalDotPosition, multiplier, multiplier * tetrimino.rows, Black);
+
+  printTetrimino(tetrimino);
+
+  previousHorizontalDotPosition = horizontalDotPosition;
+}
+
+void movedLeft(Tetrimino tetrimino)
+{
+  horizontalDotPosition = horizontalDotPosition - (speed*multiplier);
+
+  TFTscreen.fillRect(horizontalDotPosition + (multiplier * tetrimino.cols),verticalDotPosition,  multiplier, multiplier * tetrimino.rows, Black);
+  printTetrimino(tetrimino);
+  previousHorizontalDotPosition = horizontalDotPosition;
+}
+
+void movedDown(Tetrimino tetrimino)
+{
+  verticalDotPosition = verticalDotPosition +( speed*multiplier);
+  TFTscreen.fillRect( horizontalDotPosition, previousVerticalDotPosition,multiplier * tetrimino.cols, multiplier, Black);
+  printTetrimino(tetrimino);
+  previousVerticalDotPosition = verticalDotPosition;
 }

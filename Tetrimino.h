@@ -4,15 +4,13 @@
 class Tetrimino {
 
   public:
-    void initialise(boolean **, int, int, uint16_t, int );
+    void initialise(boolean *gridPass, int rowNum, int colNum, uint16_t tetColour, int multiplier);
     virtual int blocksRight();
     virtual int blocksDown();
+    virtual boolean booleanOfGrid(int,int);
     int rows;
     int cols;
-    int multiRows;
-    int multiCols;
-    boolean **grid;
-    boolean **multiGrid;
+    boolean *grid;
     uint16_t colour;
 };
 
