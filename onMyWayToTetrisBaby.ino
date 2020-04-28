@@ -29,7 +29,7 @@ const int upButtonPin = A0;
 // #define Green       0x03E0      /*   0, 128,   0 */
 #define Yellow 0x03EF /*   0, 128, 128 */
 // #define DarkBlue          0x7800      /* 128,   0,   0 */
-// #define Pink          0x780F      /* 128,   0, 128 */
+#define Pink 0x780F      /* 128,   0, 128 */
 #define Olive 0x7BE0     /* 128, 128,   0 */
 #define LightGrey 0xC618 /* 192, 192, 192 */
 #define DarkGrey 0x7BEF  /* 128, 128, 128 */
@@ -82,19 +82,21 @@ int previousVerticalDotPosition = verticalDotPosition;
 int previousHorizontalDotPosition = horizontalDotPosition;
 int previousLevel = level;
 
-int verticalPlayFieldStart = -1;
-int horizontalPlayFieldStart = 1;
-int heightPlayField = (20 * multiplier) + 2;
-int widthPlayField = (10 * multiplier) + 2;
+const int verticalPlayFieldStart = -1;
+const int horizontalPlayFieldStart = 1;
+const int tetrisGridWidth = 10;
+const int tetrisGridHeight = 20;
+const int heightPlayField = (tetrisGridHeight * multiplier) + 2;
+const int widthPlayField = (tetrisGridWidth * multiplier) + 2;
 
-int linePosHorizontalMaxRight = horizontalPlayFieldStart + widthPlayField;
-int linePosVerticalMaxUp = verticalPlayFieldStart + 1;
-int linePosVerticalMaxDown = verticalPlayFieldStart + heightPlayField - 1;
-int linePosHorizontalMaxLeft = horizontalPlayFieldStart;
+const int linePosHorizontalMaxRight = horizontalPlayFieldStart + widthPlayField;
+const int linePosVerticalMaxUp = verticalPlayFieldStart + 1;
+const int linePosVerticalMaxDown = verticalPlayFieldStart + heightPlayField - 1;
+const int linePosHorizontalMaxLeft = horizontalPlayFieldStart;
 
-int verticalStartPosition = linePosVerticalMaxUp - (2 * multiplier);
+const int verticalStartPosition = linePosVerticalMaxUp - (2 * multiplier);
 
-int horizontalStartPosition = linePosHorizontalMaxLeft + (widthPlayField / 2) - multiplier;
+const int horizontalStartPosition = linePosHorizontalMaxLeft + (widthPlayField / 2) - multiplier;
 
 long timeTaken;
 long previousTime;
@@ -103,6 +105,9 @@ boolean alive;
 
 Tetrimino o;
 Tetrimino l;
+Tetrimino t;
+
+uint16_t playGrid[tetrisGridWidth * tetrisGridHeight];
 
 void setup()
 {
@@ -115,8 +120,12 @@ void setup()
 
   // TFTscreen.invertDisplay(0);
   // clear the screen with a black background
-  TFTscreen.background(0, 0, 0);
-  TFTscreen.stroke(255, 255, 255);
+  TFTscreen.background(Black);
+  int counter;
+  for (int counter = 0; counter < tetrisGridWidth * tetrisGridHeight; counter++)
+  {
+    playGrid[counter] = 0;
+  }
 
   const int oRows = 2;
   const int oCols = 2;
@@ -127,30 +136,24 @@ void setup()
       1,
   };
 
-  // int *oPtr  [oRows * oCols]; 
-  // //= oArray
-  // ;
-  // for (size_t i = 0; i < oRows * oCols; i++)
-  // {
-  //   oPtr[i] = &oArray[i];
-  // }
   o.initialise(oArray, oRows, oCols, Yellow, multiplier);
 
   const int lRows = 4;
   const int lCols = 4;
   int lArray[lRows * lCols] = {0, 0, 0, 0,
-                                   1, 1, 1, 1,
-                                   0, 0, 0, 0,
-                                   0, 0, 0, 0};
+                               1, 1, 1, 1,
+                               0, 0, 0, 0,
+                               0, 0, 0, 0};
 
-  // int *lPtr [lRows * lCols];
-  // //= lArray
-  // ;
-  // for (size_t i = 0; i < oRows * oCols; i++)
-  // {
-  //   lPtr[i] = &lArray[i];
-  // }
   l.initialise(lArray, lRows, lCols, Blue, multiplier);
+
+  const int tRows = 3;
+  const int tCols = 3;
+  int tArray[tRows * tCols] = {0, 0, 0,
+                               0, 1, 0,
+                               1, 1, 1};
+
+  t.initialise(tArray, tRows, tCols, Pink, multiplier);
 
   // initialize the pushbutton pin as an input:
   pinMode(downButtonPin, INPUT);
@@ -163,9 +166,8 @@ void setup()
   //yStart : int, the vertical position where the line starts
   //width : int, the width of the rectangle
   //height : int, the height of the rectangle
+  TFTscreen.stroke(White);
   TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayField, heightPlayField);
-
-  // TFTscreen.rect(10, 10, 10, 10);
 }
 
 void loop()
@@ -174,17 +176,20 @@ void loop()
   spawnTetrimino(o);
   Serial.println("l");
   spawnTetrimino(l);
+  Serial.println("t");
+  spawnTetrimino(t);
 }
 
 void spawnTetrimino(Tetrimino tetrimino)
 {
   alive = true;
-  // TFTscreen.stroke(255, 255, 255);
   TFTscreen.stroke(tetrimino.colour);
   int m, n, k, y;
   verticalDotPosition = verticalStartPosition;
+  previousVerticalDotPosition = verticalStartPosition;
 
   horizontalDotPosition = horizontalStartPosition;
+  previousHorizontalDotPosition = horizontalDotPosition;
 
   previousTime = millis();
   while (alive)
@@ -281,34 +286,11 @@ double calculateFallSpeed(int level)
   return pow(0.8 - ((level - 1) * 0.007), (level - 1));
 }
 
-void printTetrimino(Tetrimino tetrimino)
-{
-  for (int m = 0; m < tetrimino.rows; m++)
-  {
-    for (int n = 0; n < tetrimino.cols; n++)
-    {
-
-      if (tetrimino.booleanOfGrid(m, n))
-      {
-
-        TFTscreen.fillRect(horizontalDotPosition + (multiplier * m), verticalDotPosition + (multiplier * n), multiplier, multiplier, tetrimino.colour);
-      }
-      else
-      {
-
-        TFTscreen.fillRect(horizontalDotPosition + (multiplier * m), verticalDotPosition + (multiplier * n), multiplier, multiplier, Black);
-      }
-    }
-  }
-}
-
 void movedRight(Tetrimino tetrimino)
 {
   horizontalDotPosition = horizontalDotPosition + (speed * multiplier);
 
-  TFTscreen.fillRect(previousHorizontalDotPosition, verticalDotPosition, multiplier, multiplier * tetrimino.rows, Black);
-
-  printTetrimino(tetrimino);
+  moveScreenTetrimino(tetrimino);
 
   previousHorizontalDotPosition = horizontalDotPosition;
 }
@@ -317,15 +299,58 @@ void movedLeft(Tetrimino tetrimino)
 {
   horizontalDotPosition = horizontalDotPosition - (speed * multiplier);
 
-  TFTscreen.fillRect(horizontalDotPosition + (multiplier * tetrimino.cols), verticalDotPosition, multiplier, multiplier * tetrimino.rows, Black);
-  printTetrimino(tetrimino);
+  moveScreenTetrimino(tetrimino);
+
   previousHorizontalDotPosition = horizontalDotPosition;
 }
 
 void movedDown(Tetrimino tetrimino)
 {
   verticalDotPosition = verticalDotPosition + (speed * multiplier);
-  TFTscreen.fillRect(horizontalDotPosition, previousVerticalDotPosition, multiplier * tetrimino.cols, multiplier, Black);
-  printTetrimino(tetrimino);
+
+  moveScreenTetrimino(tetrimino);
+
   previousVerticalDotPosition = verticalDotPosition;
+}
+
+void moveScreenTetrimino(Tetrimino tetrimino)
+{
+  erasePreviousColouredPoints(tetrimino);
+  createNewColouredPoints(tetrimino);
+}
+
+void erasePreviousColouredPoints(Tetrimino tetrimino)
+{
+  fillInOldGrid(tetrimino, true, Black);
+}
+
+void createNewColouredPoints(Tetrimino tetrimino)
+{
+  fillInNewGrid(tetrimino, true, tetrimino.colour);
+}
+
+void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t colour)
+{
+  fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, trueOrFalse, colour);
+}
+
+void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t colour)
+{
+  fillInGrid(tetrimino, previousHorizontalDotPosition, previousVerticalDotPosition, trueOrFalse, colour);
+}
+
+void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour)
+{
+  for (int m = 0; m < tetrimino.rows; m++)
+  {
+    for (int n = 0; n < tetrimino.cols; n++)
+    {
+
+      if (tetrimino.booleanOfGrid(m, n) == trueOrFalse)
+      {
+
+        TFTscreen.fillRect(startHorizontalDotPosition + (multiplier * m), startVerticalDotPosition + (multiplier * n), multiplier, multiplier, colour);
+      }
+    }
+  }
 }
