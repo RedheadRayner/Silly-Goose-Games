@@ -14,8 +14,6 @@ void Tetrimino::initialise(int gridPass[], int rowNum, int colNum, uint16_t tetC
         {
 
             grid[i + colNum * j] = gridPass[i + colNum * j];
-            Serial.println(gridPass[i + colNum * j]);
-            Serial.println(grid[i + colNum * j]);
         }
     }
 

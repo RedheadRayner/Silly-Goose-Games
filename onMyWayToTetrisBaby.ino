@@ -69,35 +69,38 @@ int upButtonState = 0;    // variable for reading the pushbutton status
 
 // initial position of the point is the middle of the screen
 // initial position of the point is the middle of the screen
-int verticalDotPosition = 80;
-int horizontalDotPosition = 64;
+int verticalDotCentrePosition = 80;
+int horizontalDotCentrePosition = 64;
 
 int level = 1;
 
 // direction and speed
 int speed = 1;
 
-// variables to keep track of the point's location
-int previousVerticalDotPosition = verticalDotPosition;
-int previousHorizontalDotPosition = horizontalDotPosition;
-int previousLevel = level;
-
+const int numInvisableRows = 2;
 const int verticalPlayFieldStart = -1;
 const int horizontalPlayFieldStart = 1;
-const int tetrisGridWidth = 10;
-const int tetrisGridHeight = 20;
-const int heightPlayField = (tetrisGridHeight * multiplier) + 2;
-const int widthPlayField = (tetrisGridWidth * multiplier) + 2;
+const int tetrisGridCols = 10;
+const int tetrisGridRows = 20;
+const int tetrisGridRowsIncInvis = 20 + numInvisableRows;
+const int heightPlayField = (tetrisGridRows * multiplier) + 2;
+const int widthPlayField = (tetrisGridCols * multiplier) + 2;
 
 const int linePosHorizontalMaxRight = horizontalPlayFieldStart + widthPlayField;
 const int linePosVerticalMaxUp = verticalPlayFieldStart + 1;
 const int linePosVerticalMaxDown = verticalPlayFieldStart + heightPlayField - 1;
 const int linePosHorizontalMaxLeft = horizontalPlayFieldStart;
 
-const int verticalStartPosition = linePosVerticalMaxUp - (2 * multiplier);
+const int verticalStartPosition = linePosVerticalMaxUp - (numInvisableRows * multiplier);
 
 const int horizontalStartPosition = linePosHorizontalMaxLeft + (widthPlayField / 2) - multiplier;
 
+// variables to keep track of the point's location
+int verticalDotPosition = verticalStartPosition;
+int horizontalDotPosition = horizontalStartPosition;
+int previousVerticalDotPosition = verticalStartPosition;
+int previousHorizontalDotPosition = horizontalStartPosition;
+int previousLevel = level;
 long timeTaken;
 long previousTime;
 long fallSpeed = 1000;
@@ -107,7 +110,7 @@ Tetrimino o;
 Tetrimino l;
 Tetrimino t;
 
-uint16_t playGrid[tetrisGridWidth * tetrisGridHeight];
+uint16_t playGrid[tetrisGridCols * tetrisGridRowsIncInvis];
 
 void setup()
 {
@@ -122,7 +125,7 @@ void setup()
   // clear the screen with a black background
   TFTscreen.background(Black);
   int counter;
-  for (int counter = 0; counter < tetrisGridWidth * tetrisGridHeight; counter++)
+  for (int counter = 0; counter < tetrisGridCols * tetrisGridRowsIncInvis; counter++)
   {
     playGrid[counter] = 0;
   }
@@ -161,12 +164,12 @@ void setup()
   pinMode(rightButtonPin, INPUT);
   pinMode(upButtonPin, INPUT);
 
+  TFTscreen.stroke(White);
   //screen.rect(xStart, yStart, width, height);
   //xStart : int, the horizontal position where the line starts
   //yStart : int, the vertical position where the line starts
   //width : int, the width of the rectangle
   //height : int, the height of the rectangle
-  TFTscreen.stroke(White);
   TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayField, heightPlayField);
 }
 
@@ -178,13 +181,31 @@ void loop()
   spawnTetrimino(l);
   Serial.println("t");
   spawnTetrimino(t);
+  int e, p;
+  delay(5000);
+
+       for (int e = 0; e < tetrisGridRowsIncInvis; e++)
+    {
+      Serial.println("");
+  for (int p = 0; p < tetrisGridCols; p++)
+  {
+
+      if (playGrid[p + tetrisGridCols * e] == 0)
+      {
+        Serial.print("o");}
+      else
+      {
+        Serial.print("x");
+      }
+    }
+  }
+  delay(10000);
 }
 
 void spawnTetrimino(Tetrimino tetrimino)
 {
   alive = true;
   TFTscreen.stroke(tetrimino.colour);
-  int m, n, k, y;
   verticalDotPosition = verticalStartPosition;
   previousVerticalDotPosition = verticalStartPosition;
 
@@ -198,33 +219,48 @@ void spawnTetrimino(Tetrimino tetrimino)
     timeTaken = millis() - previousTime;
     if (timeTaken >= fallSpeed)
     {
-      forceDownTetrimino(tetrimino);
+      tryToMoveDown(tetrimino);
       previousTime = millis();
     };
   }
+
+  //No longer alive... now we need to commit the block to the playing field.
+
+  commitToPlayGrid(tetrimino);
 }
 
-void forceDownTetrimino(Tetrimino tetrimino)
+void commitToPlayGrid(Tetrimino tetrimino)
 {
-  if (verticalDotPosition + ((speed + tetrimino.blocksDown()) * multiplier) > linePosVerticalMaxDown)
-  {
 
-    alive = false;
-  }
-  else
+  for (int n = 0; n < tetrimino.cols; n++)
   {
-    long timeBefore = millis();
-    movedDown(tetrimino);
+    for (int m = 0; m < tetrimino.rows; m++)
+    {
 
-    long timeTook = millis() - timeBefore;
-    // Serial.println(timeTook);
+      if (tetrimino.booleanOfGrid(m, n))
+      {
+        Serial.print(m);
+
+        Serial.print(",");
+        Serial.print(n);
+        Serial.print(" : playgrid[");
+        Serial.print((((horizontalDotPosition - linePosHorizontalMaxLeft) / multiplier) + m) + (tetrisGridCols * (((verticalDotPosition - linePosVerticalMaxUp) / multiplier) + n)));
+        Serial.print("]");
+        Serial.print(" AKA  playgrid[");
+        Serial.print(((horizontalDotPosition - linePosHorizontalMaxLeft) / multiplier) + m);
+        Serial.print("][");
+        Serial.print((((verticalDotPosition - linePosVerticalMaxUp) / multiplier) + n));
+        Serial.print("] ==     ");
+        Serial.println(tetrimino.colour);
+
+        playGrid[(((horizontalDotPosition - linePosHorizontalMaxLeft) / multiplier) + m) + (tetrisGridCols * (numInvisableRows +((verticalDotPosition - linePosVerticalMaxUp) / multiplier) + n))] = tetrimino.colour;
+      }
+    }
   }
-  delay(5);
 }
 
 void moveTetrimino(Tetrimino tetrimino)
 {
-  int m, n;
   downButtonState = digitalRead(downButtonPin);
   upButtonState = digitalRead(upButtonPin);
   leftButtonState = digitalRead(leftButtonPin);
@@ -232,18 +268,8 @@ void moveTetrimino(Tetrimino tetrimino)
 
   if (downButtonState == HIGH)
   {
-    //TODO - implement faster fall
-
-    if (verticalDotPosition + ((speed + tetrimino.blocksDown()) * multiplier) > linePosVerticalMaxDown)
-    {
-
-      Serial.println("MAX_DOWN");
-    }
-    else
-    {
-
-      movedDown(tetrimino);
-    }
+    //TODO - implement legit faster fall rules
+ tryToMoveDown(tetrimino);
   }
   if (upButtonState == HIGH)
   {
@@ -279,6 +305,58 @@ void moveTetrimino(Tetrimino tetrimino)
   }
   previousLevel = level;
   delay(50);
+
+
+}
+
+void tryToMoveDown(Tetrimino tetrimino){
+ int hypotheticalVerticalDotPosition = verticalDotPosition + ((speed + tetrimino.blocksDown()) * multiplier);
+    if (hitBottom(tetrimino,hypotheticalVerticalDotPosition))
+    {
+      // TODO combine into one or statement when it works
+      alive = false;
+
+      Serial.println("MAX_DOWN");
+    } else if( overlapOfPlayGrid(tetrimino, hypotheticalVerticalDotPosition)){
+       alive = false;
+       
+      Serial.println("HIT BLOCK");
+    
+    }
+    else
+    {
+
+      movedDown(tetrimino);
+    }
+}
+
+
+boolean hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition){
+if (hypotheticalVerticalDotPosition> linePosVerticalMaxDown){
+  return true;
+}
+return false;
+}
+
+
+boolean overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalVerticalDotPosition)
+{
+ for (int n = 0; n < tetrimino.cols; n++)
+  {
+    for (int m = 0; m < tetrimino.rows; m++)
+    {
+
+      if (tetrimino.booleanOfGrid(m, n))
+      {
+
+        if (playGrid[(((horizontalDotPosition - linePosHorizontalMaxLeft) / multiplier) + m) + (tetrisGridCols * (   numInvisableRows +((verticalDotPosition - linePosVerticalMaxUp) / multiplier) + n))] != 0)
+        {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 double calculateFallSpeed(int level)
