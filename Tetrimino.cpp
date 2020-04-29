@@ -5,7 +5,6 @@ void Tetrimino::initialise(int gridPass[], int rowNum, int colNum, uint16_t tetC
 {
     this->rows = rowNum;
     this->cols = colNum;
-    int i, j;
     grid = new int[rowNum * colNum];
     this->colour = tetColour;
     for (int i = 0; i < this->rows; ++i)

@@ -5,8 +5,7 @@
             "includePath": [
                 "C:\\Program Files (x86)\\Arduino\\tools\\**",
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\**",
-                "C:\\Users\\Janis\\OneDrive\\Documents\\Arduino\\libraries\\Adafruit_GFX_Library\\**",
-                "C:\\Program Files (x86)\\Arduino\\libraries\\TFT\\src\\**"
+                "C:\\Users\\Janis\\OneDrive\\Documents\\Arduino\\libraries\\Adafruit_GFX_Library\\**"
             ],
             "forcedInclude": [
                 "C:\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\cores\\arduino\\Arduino.h"
