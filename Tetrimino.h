@@ -6,9 +6,11 @@ class Tetrimino {
   public:
     void initialise(int gridPass[], int rowNum, int colNum, uint16_t tetColour, int multiplier);
     virtual int blocksRight();
+    virtual int blocksLeft();
     virtual int blocksDown();
     virtual boolean booleanOfGrid(int,int);
     void rotateGrid();
+    void unrotateGrid();
     void spawn();
     int rows;
     int cols;

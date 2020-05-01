@@ -40,6 +40,23 @@ int Tetrimino::blocksRight()
     return this->rows - i;
 }
 
+int Tetrimino::blocksLeft()
+{
+    int i, j;
+    for (int i = 0; i < this->rows; ++i)
+    {
+        for (int j = 0; j < this->cols; j++)
+        {
+            if (booleanOfGrid( i,  j))
+            {
+                return i;
+            }
+        }
+    }
+
+    return  i;
+}
+
 int Tetrimino::blocksDown()
 {
     int i, j;
@@ -90,6 +107,28 @@ int rotatedGrid[this->cols * this->rows];
         {
 
             currentGrid[i +  this->cols * j] = rotatedGrid[i + this->cols * j];
+        }
+    }
+}
+
+void Tetrimino::unrotateGrid()
+{
+int unrotatedGrid[this->cols * this->rows];
+
+     for (int i = 0; i < this->rows; ++i)
+    {
+        for (int j = 0; j < this->cols; j++)
+        {
+
+            unrotatedGrid[( this->cols - j - 1) + this->cols *i] = currentGrid[i + this->cols * j ];
+        }
+    }
+    for (int i = 0; i < this->rows; ++i)
+    {
+        for (int j = 0; j < this->cols; j++)
+        {
+
+            currentGrid[i +  this->cols * j] = unrotatedGrid[i + this->cols * j];
         }
     }
 }
