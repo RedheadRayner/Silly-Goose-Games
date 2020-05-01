@@ -8,9 +8,12 @@ class Tetrimino {
     virtual int blocksRight();
     virtual int blocksDown();
     virtual boolean booleanOfGrid(int,int);
+    void rotateGrid();
+    void spawn();
     int rows;
     int cols;
-    int* grid;
+    int* startGrid;
+    int* currentGrid;
     uint16_t colour;
 };
 

@@ -5,19 +5,22 @@ void Tetrimino::initialise(int gridPass[], int rowNum, int colNum, uint16_t tetC
 {
     this->rows = rowNum;
     this->cols = colNum;
-    grid = new int[rowNum * colNum];
+    startGrid = new int[rowNum * colNum];
+    currentGrid = new int[rowNum * colNum];
     this->colour = tetColour;
     for (int i = 0; i < this->rows; ++i)
     {
         for (int j = 0; j < this->cols; j++)
         {
 
-            grid[i + colNum * j] = gridPass[i + colNum * j];
+            startGrid[i + colNum * j] = gridPass[i + colNum * j];
         }
     }
+ this-> currentGrid = startGrid;
+}
 
-    // this->grid = gridPass;
-    delay(1000);
+void Tetrimino::spawn(){
+ this-> currentGrid = startGrid;
 }
 
 int Tetrimino::blocksRight()
@@ -56,10 +59,37 @@ int Tetrimino::blocksDown()
 
 boolean Tetrimino::booleanOfGrid(int row, int col)
 {
-    int gridVal = this->grid[row + this->cols * col];
+    int gridVal = this->currentGrid[row + this->cols * col];
     if (gridVal == 1)
     {
         return true;
     }
     return false;
+}
+
+//0°) i=wy + x
+//90°) i=w(w-1) + y - wx
+//180°) i= w^2 - 1 - wy - x
+//270°) i= w - 1 - y +wx
+
+void Tetrimino::rotateGrid()
+{
+int rotatedGrid[this->cols * this->rows];
+
+     for (int i = 0; i < this->rows; ++i)
+    {
+        for (int j = 0; j < this->cols; j++)
+        {
+
+            rotatedGrid[i + this->cols * j] = currentGrid[( this->cols - j - 1) + this->cols *i ];
+        }
+    }
+    for (int i = 0; i < this->rows; ++i)
+    {
+        for (int j = 0; j < this->cols; j++)
+        {
+
+            currentGrid[i +  this->cols * j] = rotatedGrid[i + this->cols * j];
+        }
+    }
 }

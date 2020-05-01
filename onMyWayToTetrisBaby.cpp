@@ -22,14 +22,17 @@
  SPI2 CS   PB12
 */
 
-#define TFT_CS PA2
+#define TFT_CS PB10
 #define TFT_DC PB0
-#define TFT_RST PA0
+#define TFT_RST PB1
 
 #define DOWN_BUTTON PA4
-#define UP_BUTTON PA1
+#define UP_BUTTON PA2
 #define RIGHT_BUTTON PA6
 #define LEFT_BUTTON PA3
+
+#define B_BUTTON PA1
+#define A_BUTTON PA0
 
 #define TFT_MAX_WIDTH 120
 #define TFT_MAX_HEIGHT 160
@@ -37,40 +40,38 @@
 
 // Color definitions
 /* some RGB color definitions                                                 */
-#define Black 0x0000 /*   0,   0,   0 */
-// #define DarkRed            0x000F      /*   0,   0, 128 */
-// #define Green       0x03E0      /*   0, 128,   0 */
-#define Yellow 0x03EF /*   0, 128, 128 */
-// #define DarkBlue          0x7800      /* 128,   0,   0 */
-#define Pink 0x780F      /* 128,   0, 128 */
-#define Olive 0x7BE0     /* 128, 128,   0 */
-#define LightGrey 0xC618 /* 192, 192, 192 */
-#define DarkGrey 0x7BEF  /* 128, 128, 128 */
-#define Red 0x001F       /*   0,   0, 255 */
-#define Green 0x07E0     /*   0, 255,   0 */
-#define Todo 0x07FF      /*   0, 255, 255 */
+#define Black 0x0000
+// #define DarkRed            0x000F   
+#define Green       0x03E0   
+#define Yellow 0x03EF
+#define DarkBlue          0x7800     
+#define Pink 0x780F   
+#define Olive 0x7BE0   
+#define LightGrey 0xC618
+#define DarkGrey 0x7BEF 
+#define Red 0x001F  
+#define Orange 0x02EF      
+#define Green 0x07E0  
 // #define DarkBlue             0xF800      /* 255,   0,   0 */
 // #define Magenta         0xF81F      /* 255,   0, 255 */
-#define Blue 0xFFE0  /* 255, 255,   0 */
-#define White 0xFFFF /* 255, 255, 255 */
-// #define Blue          0xFD20      /* 255, 165,   0 */
-#define GreenYellow 0xAFE5 /* 173, 255,  47 */
+#define Blue 0xFFE0  
+#define White 0xFFFF
+#define Blue          0xFD20      
+#define GreenYellow 0xAFE5 
+
 
 int multiplier = 8;
 
 // create an instance of the library
 TFT TFTscreen = TFT(TFT_CS, TFT_DC, TFT_RST);
 
-//0°) i=wy + x
-//90°) i=w(w-1) + y - wx
-//180°) i= w^2 - 1 - wy - x
-//270°) i= w - 1 - y +wx
-
 // variables will change:
 int downButtonState = 0;  // variable for reading the pushbutton status
 int leftButtonState = 0;  // variable for reading the pushbutton status
 int rightButtonState = 0; // variable for reading the pushbutton status
 int upButtonState = 0;    // variable for reading the pushbutton status
+int bButtonState = 0;     // variable for reading the pushbutton status
+int aButtonState = 0;     // variable for reading the pushbutton status
 
 // initial position of the point is the middle of the screen
 // initial position of the point is the middle of the screen
@@ -112,10 +113,17 @@ long previousTime;
 long fallSpeed = 1000;
 boolean tetriminoAlive;
 boolean gameAlive;
+boolean letGoOfHardDrop;
+boolean letGoOfRotate;
+int *currentTetriminoGrid;
 
 Tetrimino o;
 Tetrimino l;
 Tetrimino t;
+Tetrimino i;
+Tetrimino j;
+Tetrimino s;
+Tetrimino z;
 
 uint16_t playGrid[tetrisGridCols * tetrisGridRowsIncInvis];
 
@@ -128,6 +136,7 @@ void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t colour);
 void createNewColouredPoints(Tetrimino tetrimino);
 void erasePreviousColouredPoints(Tetrimino tetrimino);
 void moveScreenTetrimino(Tetrimino tetrimino);
+void rotateScreenTetrimino(Tetrimino tetrimino);
 void movedDown(Tetrimino tetrimino);
 double calculateFallSpeed(int level);
 void movedRight(Tetrimino tetrimino);
@@ -148,7 +157,7 @@ void setup()
 
   // Put this line at the beginning of every sketch that uses the GLCD:
   TFTscreen.begin();
-  TFTscreen.setRotation(2);
+  TFTscreen.setRotation(0);
 
   const int oRows = 2;
   const int oCols = 2;
@@ -161,27 +170,63 @@ void setup()
 
   o.initialise(oArray, oRows, oCols, Yellow, multiplier);
 
-  const int lRows = 4;
-  const int lCols = 4;
-  int lArray[lRows * lCols] = {0, 0, 0, 0,
+  const int iRows = 4;
+  const int iCols = 4;
+  int iArray[iRows * iCols] = {0, 0, 0, 0,
                                1, 1, 1, 1,
                                0, 0, 0, 0,
                                0, 0, 0, 0};
 
-  l.initialise(lArray, lRows, lCols, Blue, multiplier);
+  i.initialise(iArray, iRows, iCols, Blue, multiplier);
 
   const int tRows = 3;
   const int tCols = 3;
-  int tArray[tRows * tCols] = {0, 0, 0,
-                               0, 1, 0,
-                               1, 1, 1};
+  int tArray[tRows * tCols] = {0, 1, 0,
+                               1, 1, 1,
+                               0, 0, 0};
 
   t.initialise(tArray, tRows, tCols, Pink, multiplier);
+
+  const int lRows = 3;
+  const int lCols = 3;
+  int lArray[lRows * lCols] = {0, 0, 1,
+                               1, 1, 1,
+                               0, 0, 0};
+
+  l.initialise(lArray, lRows, lCols, Orange, multiplier);
+
+    const int jRows = 3;
+  const int jCols = 3;
+  int jArray[jRows * jCols] = {1, 0, 0,
+                               1, 1, 1,
+                               0, 0, 0};
+
+  j.initialise(jArray, jRows, jCols, DarkBlue, multiplier);
+
+  const int sRows = 3;
+  const int sCols = 3;
+  int sArray[sRows * sCols] = {0, 1, 1,
+                               1, 1, 0,
+                               0, 0, 0};
+
+                               
+
+  s.initialise(sArray, sRows, sCols, Green, multiplier);
+
+    const int zRows = 3;
+  const int zCols = 3;
+  int zArray[zRows * zCols] = {1, 1, 0,
+                               0, 1, 1,
+                               0, 0, 0};
+
+  z.initialise(zArray, zRows, zCols, Red, multiplier);
 
   pinMode(DOWN_BUTTON, INPUT);
   pinMode(UP_BUTTON, INPUT);
   pinMode(LEFT_BUTTON, INPUT);
   pinMode(RIGHT_BUTTON, INPUT);
+  pinMode(B_BUTTON, INPUT);
+  pinMode(A_BUTTON, INPUT);
 
   // clear the screen with a black background
   TFTscreen.background(Black);
@@ -202,12 +247,14 @@ void loop()
   clearGrid();
   while (gameAlive)
   {
-    Serial.println("o");
     spawnTetrimino(o);
-    Serial.println("l");
     spawnTetrimino(l);
-    Serial.println("t");
     spawnTetrimino(t);
+       spawnTetrimino(j);
+    spawnTetrimino(i);
+    spawnTetrimino(s);
+    
+    spawnTetrimino(z);
   }
   TFTscreen.fillRect(linePosHorizontalMaxLeft + 1, linePosVerticalMaxUp, widthPlayField - 2, heightPlayField, Black);
   TFTscreen.stroke(White);
@@ -225,7 +272,7 @@ void clearGrid()
 
 void spawnTetrimino(Tetrimino tetrimino)
 {
-
+  tetrimino.spawn();
   tetriminoAlive = true;
   TFTscreen.stroke(tetrimino.colour);
   verticalDotPosition = verticalStartPosition;
@@ -233,10 +280,11 @@ void spawnTetrimino(Tetrimino tetrimino)
 
   horizontalDotPosition = horizontalStartPosition;
   previousHorizontalDotPosition = horizontalDotPosition;
-
+  letGoOfHardDrop = false;
   previousTime = millis();
   while (tetriminoAlive)
   {
+
     moveTetrimino(tetrimino);
     timeTaken = millis() - previousTime;
     if (timeTaken >= fallSpeed)
@@ -277,13 +325,19 @@ void moveTetrimino(Tetrimino tetrimino)
   upButtonState = digitalRead(UP_BUTTON);
   leftButtonState = digitalRead(LEFT_BUTTON);
   rightButtonState = digitalRead(RIGHT_BUTTON);
+  bButtonState = digitalRead(B_BUTTON);
+  aButtonState = digitalRead(A_BUTTON);
+  if (upButtonState == LOW)
+  {
+    letGoOfHardDrop = true;
+  }
 
   if (downButtonState == HIGH)
   {
     //TODO - implement legit faster fall rules
     tryToMoveDown(tetrimino);
   }
-  if (upButtonState == HIGH)
+  if (upButtonState == HIGH && letGoOfHardDrop)
   {
     hardDrop(tetrimino);
   }
@@ -296,6 +350,22 @@ void moveTetrimino(Tetrimino tetrimino)
 
     tryToMoveRight(tetrimino);
   }
+
+  if (aButtonState == HIGH)
+  {
+    // HOLD
+  }
+  if (bButtonState == HIGH && letGoOfRotate)
+  {
+    
+    letGoOfRotate = false;
+    rotateScreenTetrimino(tetrimino);
+  }
+  if (bButtonState == LOW)
+  {
+    letGoOfRotate = true;
+  }
+
   previousLevel = level;
   delay(50);
 }
@@ -310,6 +380,7 @@ void hardDrop(Tetrimino tetrimino)
     hypotheticalVerticalDotPosition = verticalDotPosition + (speed * multiplier);
   }
   movedDown(tetrimino);
+  tetriminoAlive = false;
 }
 
 void tryToMoveDown(Tetrimino tetrimino)
@@ -430,6 +501,14 @@ void moveScreenTetrimino(Tetrimino tetrimino)
   createNewColouredPoints(tetrimino);
 }
 
+void rotateScreenTetrimino(Tetrimino tetrimino)
+{
+  fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, Black);
+  tetrimino.rotateGrid();
+  fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, tetrimino.colour);
+  
+}
+
 void erasePreviousColouredPoints(Tetrimino tetrimino)
 {
   fillInOldGrid(tetrimino, true, Black);
@@ -460,7 +539,7 @@ void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVe
       if (tetrimino.booleanOfGrid(m, n) == trueOrFalse)
       {
 
-        TFTscreen.fillRect(startHorizontalDotPosition + (multiplier * m), startVerticalDotPosition + (multiplier * n), multiplier, multiplier, colour);
+        TFTscreen.fillRect(startHorizontalDotPosition + 1 + (multiplier * m), startVerticalDotPosition + 1 + (multiplier * n), multiplier - 1, multiplier - 1, colour);
       }
     }
   }
