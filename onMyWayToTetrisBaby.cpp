@@ -136,8 +136,8 @@ void moveTetrimino(Tetrimino tetrimino);
 void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour);
 void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour);
 
-void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t colour);
-void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t colour);
+void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour);
+void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour);
 void createNewColouredPoints(Tetrimino tetrimino);
 void erasePreviousColouredPoints(Tetrimino tetrimino);
 void moveScreenTetrimino(Tetrimino tetrimino);
@@ -150,6 +150,7 @@ void tryToRotate(Tetrimino tetrimino);
 void tryToMoveDown(Tetrimino tetrimino);
 void tryToMoveRight(Tetrimino tetrimino);
 void tryToMoveLeft(Tetrimino tetrimino);
+void ghostPositionUpdate(Tetrimino tetrimino);
 boolean hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition);
 boolean overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPosition, int hypotheticalVerticalDotPosition);
 void commitToPlayGrid(Tetrimino tetrimino);
@@ -162,7 +163,6 @@ void updateGhostColour(Tetrimino tetrimino);
 
 void setup()
 {
-  // Serial.begin(9600);
   SerialUSB.begin();
   SerialUSB.println("start");
 
@@ -318,14 +318,18 @@ void spawnTetrimino(Tetrimino tetrimino)
 void commitToPlayGrid(Tetrimino tetrimino)
 {
 
-  for (int n = 0; n < tetrimino.cols; n++)
-  {
     for (int m = 0; m < tetrimino.rows; m++)
     {
+      
+  for (int n = 0; n < tetrimino.cols; n++)
+  {
 
       if (tetrimino.booleanOfGrid(m, n))
       {
-        playGrid[(((horizontalDotPosition - linePosHorizontalMaxLeft) / multiplier) + m) + (tetrisGridCols * (numInvisableRows + ((verticalDotPosition - linePosVerticalMaxUp) / multiplier) + n))] = tetrimino.colour;
+        int rationalHorizontal = (horizontalDotPosition - linePosHorizontalMaxLeft-1) / multiplier;
+        // (horizontalDotPosition - linePosHorizontalMaxLeft) < 0 ? -1 : 0
+        int rationalVertical = numInvisableRows + ((verticalDotPosition - linePosVerticalMaxUp) / multiplier) ;
+        playGrid[(rationalHorizontal + m) + (tetrisGridCols * (rationalVertical + n))] = tetrimino.colour;
       }
     }
   }
@@ -395,9 +399,8 @@ void hardDrop(Tetrimino tetrimino)
   tetriminoAlive = false;
 }
 
-void updateGhost(Tetrimino tetrimino)
-{
-   verticalGhostPosition = verticalDotPosition;
+void ghostPositionUpdate(Tetrimino tetrimino){
+ verticalGhostPosition = verticalDotPosition;
   int hypotheticalVerticalGhostPosition = verticalGhostPosition + (speed * multiplier);
 
   while (!hitBottom(tetrimino, hypotheticalVerticalGhostPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalGhostPosition)))
@@ -406,6 +409,12 @@ void updateGhost(Tetrimino tetrimino)
     hypotheticalVerticalGhostPosition = verticalGhostPosition + (speed * multiplier);
   }
 
+}
+
+void updateGhost(Tetrimino tetrimino)
+{
+  ghostPositionUpdate( tetrimino);
+  
   updateGhostColour(tetrimino);
 
 }
@@ -520,7 +529,7 @@ boolean overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPosi
 
       if (tetrimino.booleanOfGrid(m, n))
       {
-        if (playGrid[(((hypotheticalHorizontalDotPosition - linePosHorizontalMaxLeft) / multiplier) + m) + (tetrisGridCols * (numInvisableRows + ((hypotheticalVerticalDotPosition - linePosVerticalMaxUp) / multiplier) + n))] != 0)
+        if (playGrid[(((hypotheticalHorizontalDotPosition - linePosHorizontalMaxLeft-1) / multiplier) + m) + (tetrisGridCols * (numInvisableRows + ((hypotheticalVerticalDotPosition - linePosVerticalMaxUp) / multiplier) + n))] != 0)
         {
           return true;
         }
@@ -583,7 +592,8 @@ void rotateScreenTetrimino(Tetrimino tetrimino)
   ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, Black);
   fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, Black);
   tetrimino.rotateGrid();
-  ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, tetrimino.colour);
+  ghostPositionUpdate(tetrimino);
+  ghostColour(tetrimino);
   fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, tetrimino.colour);
 }
 
@@ -597,14 +607,14 @@ void createNewColouredPoints(Tetrimino tetrimino)
   fillInNewGrid(tetrimino, true, tetrimino.colour);
 }
 
-void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t colour)
+void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour)
 {
-  fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, trueOrFalse, colour);
+  fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, trueOrFalse, strokeColour);
 }
 
-void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t colour)
+void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour)
 {
-  fillInGrid(tetrimino, previousHorizontalDotPosition, previousVerticalDotPosition, trueOrFalse, colour);
+  fillInGrid(tetrimino, previousHorizontalDotPosition, previousVerticalDotPosition, trueOrFalse, strokeColour);
 }
 
 void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour)

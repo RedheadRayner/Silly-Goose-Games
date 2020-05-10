@@ -8,11 +8,11 @@ void Tetrimino::initialise(int gridPass[], int rowNum, int colNum, uint16_t tetC
     startGrid = new int[rowNum * colNum];
     currentGrid = new int[rowNum * colNum];
     this->colour = tetColour;
-    for (int i = 0; i < this->rows; ++i)
-    {
+
         for (int j = 0; j < this->cols; j++)
         {
-
+                for (int i = 0; i < this->rows; ++i)
+    {
             startGrid[i + colNum * j] = gridPass[i + colNum * j];
         }
     }
