@@ -162,8 +162,9 @@ void updateGhostColour(Tetrimino tetrimino);
 
 void setup()
 {
-  Serial.begin(9600);
-  Serial.println("start");
+  // Serial.begin(9600);
+  SerialUSB.begin();
+  SerialUSB.println("start");
 
   // Put this line at the beginning of every sketch that uses the GLCD:
   TFTscreen.begin();
@@ -255,12 +256,12 @@ void loop()
   clearGrid();
   while (gameAlive)
   {
-    // spawnTetrimino(o);
-    // spawnTetrimino(l);
-    // spawnTetrimino(t);
-    // spawnTetrimino(j);
-    // spawnTetrimino(i);
-    // spawnTetrimino(s);
+    spawnTetrimino(o);
+    spawnTetrimino(l);
+    spawnTetrimino(t);
+    spawnTetrimino(j);
+    spawnTetrimino(i);
+    spawnTetrimino(s);
     spawnTetrimino(z);
   }
   TFTscreen.fillRect(linePosHorizontalMaxLeft + 1, linePosVerticalMaxUp, widthPlayField - 2, heightPlayField, Black);
@@ -414,12 +415,12 @@ void spawnGhost(Tetrimino tetrimino)
   verticalGhostPosition = verticalDotPosition;
   int hypotheticalVerticalGhostPosition = verticalGhostPosition + (speed * multiplier);
 
+
   while (!hitBottom(tetrimino, hypotheticalVerticalGhostPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalGhostPosition)))
   {
     verticalGhostPosition = hypotheticalVerticalGhostPosition;
     hypotheticalVerticalGhostPosition = verticalGhostPosition + (speed * multiplier);
   }
-
   ghostColour(tetrimino);
 }
 
@@ -536,7 +537,7 @@ double calculateFallSpeed(int level)
 
 void movedRight(Tetrimino tetrimino)
 {
-  // updateGhost(tetrimino);
+  updateGhost(tetrimino);
   moveScreenTetrimino(tetrimino);
 
   previousHorizontalDotPosition = horizontalDotPosition;
@@ -544,7 +545,7 @@ void movedRight(Tetrimino tetrimino)
 
 void movedLeft(Tetrimino tetrimino)
 {
-  // updateGhost(tetrimino);
+  updateGhost(tetrimino);
   moveScreenTetrimino(tetrimino);
 
   previousHorizontalDotPosition = horizontalDotPosition;
@@ -579,10 +580,10 @@ void ghostColour(Tetrimino tetrimino)
 
 void rotateScreenTetrimino(Tetrimino tetrimino)
 {
-  // ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, Black);
+  ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, Black);
   fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, Black);
   tetrimino.rotateGrid();
-  // ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, tetrimino.colour);
+  ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, tetrimino.colour);
   fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, tetrimino.colour);
 }
 
@@ -622,8 +623,9 @@ void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVe
   }
 }
 
-void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour)
+void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t strokeColour)
 {
+
   for (int m = 0; m < tetrimino.rows; m++)
   {
     for (int n = 0; n < tetrimino.cols; n++)
@@ -631,8 +633,9 @@ void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVer
 
       if (tetrimino.booleanOfGrid(m, n) == trueOrFalse)
       {
+          TFTscreen.stroke(strokeColour);
 
-        TFTscreen.rect(startHorizontalDotPosition + 1 + (multiplier * m), startVerticalDotPosition + 1 + (multiplier * n), multiplier - 1, multiplier - 1, colour);
+        TFTscreen.rect(startHorizontalDotPosition + 1 + (multiplier * m), startVerticalDotPosition + 1 + (multiplier * n), multiplier - 1, multiplier - 1);
       }
     }
   }
