@@ -130,6 +130,8 @@ Tetrimino j;
 Tetrimino s;
 Tetrimino z;
 
+    Tetrimino *tetriminoArray[7] = {&o,&l,&t,&i,&j,&s,&z };
+
 uint16_t playGrid[tetrisGridCols * tetrisGridRowsIncInvis];
 
 void spawnTetrimino(Tetrimino tetrimino);
@@ -163,6 +165,8 @@ void ghostColour(Tetrimino tetrimino);
 void updateGhost(Tetrimino tetrimino);
 void updateGhostColour(Tetrimino tetrimino);
 void checkForClearLine();
+void randomSeven();
+int selectorRand[7];
 
 void setup()
 {
@@ -233,6 +237,9 @@ void setup()
 
   z.initialise(zArray, zRows, zCols, Red, multiplier);
 
+
+
+
   pinMode(DOWN_BUTTON, INPUT);
   pinMode(UP_BUTTON, INPUT);
   pinMode(LEFT_BUTTON, INPUT);
@@ -257,27 +264,59 @@ void loop()
   TFTscreen.fillRect(linePosHorizontalMaxLeft + 1, linePosVerticalMaxUp, widthPlayField - 2, heightPlayField, Black);
   gameAlive = true;
   clearGrid();
+
+randomSeven();
+int* selector = selectorRand;
+int randomTetriminos[14];
+  for (int index = 0; index < 7; index++) {
+randomTetriminos[index] = selector[index];
+SerialUSB.print("INDEX : ");
+SerialUSB.println(index);
+SerialUSB.println(selector[index]);
+SerialUSB.println(randomTetriminos[index]);
+  }
+
+  randomSeven();
+selector = selectorRand;
+    for (int index = 0; index < 7; index++) {
+randomTetriminos[index+7] = selector[index];
+  }
+
   while (gameAlive)
   {
-    spawnTetrimino(o);
+
+   for (int index = 0; index < 7; index++) {
+    spawnTetrimino( *tetriminoArray[randomTetriminos[index]]);
     checkForClearLine();
-    spawnTetrimino(l);
-    checkForClearLine();
-    spawnTetrimino(t);
-    checkForClearLine();
-    spawnTetrimino(j);
-    checkForClearLine();
-    spawnTetrimino(i);
-    checkForClearLine();
-    spawnTetrimino(s);
-    checkForClearLine();
-    spawnTetrimino(z);
-    checkForClearLine();
+  }
+  for (int index = 0; index < 7; index++) {
+randomTetriminos[index] = randomTetriminos[index+7];
+
+  }
+  randomSeven();
+selector = selectorRand;
+    for (int index = 0; index < 7; index++) {
+randomTetriminos[index+7] = selector[index];
+  }
+
   }
   TFTscreen.fillRect(linePosHorizontalMaxLeft + 1, linePosVerticalMaxUp, widthPlayField - 2, heightPlayField, Black);
   TFTscreen.stroke(White);
   TFTscreen.text("GAME OVER", (middleOfPlayField - strlen("GAME OVER")) / 2, verticalDotCentrePosition);
   delay(5000);
+
+}
+
+void randomSeven(){
+      int selector[7] = {0,1,2,3,4,5,6 };
+  for (int index = 0; index < 7; index++) {
+    int randomInt = (rand() % (7-index));
+    selectorRand[index] = selector[randomInt];
+for (int subIndex = randomInt; subIndex < 6; subIndex++) {
+selector[subIndex] = selector[subIndex+1];
+  }
+  }
+
 }
 
 void clearGrid()
@@ -330,9 +369,6 @@ void checkForClearLine()
     }
   }
 
-  // int rationalHorizontal = (horizontalDotPosition - linePosHorizontalMaxLeft- 1) / multiplier;
-  //     int rationalVertical = numInvisableRows + ((verticalDotPosition - linePosVerticalMaxUp) / multiplier) ;
-  //     playGrid[(rationalHorizontal + m) + (tetrisGridCols * (rationalVertical + n))] = tetrimino.colour;
   if (needsReDoing)
   {
     TFTscreen.fillRect(linePosHorizontalMaxLeft + 1, linePosVerticalMaxUp, widthPlayField - 2, heightPlayField, Black);
