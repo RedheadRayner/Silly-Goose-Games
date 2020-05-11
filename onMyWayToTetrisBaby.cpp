@@ -266,20 +266,14 @@ void loop()
   clearGrid();
 
 randomSeven();
-int* selector = selectorRand;
 int randomTetriminos[14];
   for (int index = 0; index < 7; index++) {
-randomTetriminos[index] = selector[index];
-SerialUSB.print("INDEX : ");
-SerialUSB.println(index);
-SerialUSB.println(selector[index]);
-SerialUSB.println(randomTetriminos[index]);
+randomTetriminos[index] = selectorRand[index];
   }
 
   randomSeven();
-selector = selectorRand;
     for (int index = 0; index < 7; index++) {
-randomTetriminos[index+7] = selector[index];
+randomTetriminos[index+7] = selectorRand[index];
   }
 
   while (gameAlive)
@@ -294,9 +288,8 @@ randomTetriminos[index] = randomTetriminos[index+7];
 
   }
   randomSeven();
-selector = selectorRand;
     for (int index = 0; index < 7; index++) {
-randomTetriminos[index+7] = selector[index];
+randomTetriminos[index+7] = selectorRand[index];
   }
 
   }
