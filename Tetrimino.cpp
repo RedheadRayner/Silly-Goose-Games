@@ -14,13 +14,21 @@ void Tetrimino::initialise(int gridPass[], int rowNum, int colNum, uint16_t tetC
                 for (int i = 0; i < this->rows; ++i)
     {
             startGrid[i + colNum * j] = gridPass[i + colNum * j];
+            currentGrid[i + colNum * j] = gridPass[i + colNum * j];
         }
     }
- this-> currentGrid = startGrid;
+
+    
 }
 
 void Tetrimino::spawn(){
- this-> currentGrid = startGrid;
+  for (int j = 0; j < this->cols; j++)
+        {
+                for (int i = 0; i < this->rows; ++i)
+    {currentGrid
+            [i + cols * j] = startGrid[i + cols * j];
+        }
+    }
 }
 
 int Tetrimino::blocksRight()
@@ -77,6 +85,16 @@ int Tetrimino::blocksDown()
 boolean Tetrimino::booleanOfGrid(int row, int col)
 {
     int gridVal = this->currentGrid[row + this->cols * col];
+    if (gridVal == 1)
+    {
+        return true;
+    }
+    return false;
+}
+
+boolean Tetrimino::booleanOfStartGrid(int row, int col)
+{
+    int gridVal = this->startGrid[row + this->cols * col];
     if (gridVal == 1)
     {
         return true;

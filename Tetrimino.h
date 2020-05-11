@@ -9,6 +9,7 @@ class Tetrimino {
     virtual int blocksLeft();
     virtual int blocksDown();
     virtual boolean booleanOfGrid(int,int);
+        virtual boolean booleanOfStartGrid(int,int);
     void rotateGrid();
     void unrotateGrid();
     void spawn();
