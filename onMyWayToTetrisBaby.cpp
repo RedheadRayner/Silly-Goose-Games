@@ -8,6 +8,7 @@
 // #define dc 9
 // #define rst 8
 #include "tetrimino.h"
+#include <EEPROM.h>
 
 /*
  STM32 SPI1/SPI2 pins:
@@ -41,7 +42,6 @@
 // Color definitions
 /* some RGB color definitions                                                 */
 #define Black 0x0000
-// #define DarkRed            0x000F
 #define Green 0x03E0
 #define Yellow 0x03EF
 #define DarkBlue 0x7800
@@ -52,8 +52,6 @@
 #define Red 0x001F
 #define Orange 0x02EF
 #define Green 0x07E0
-// #define DarkBlue             0xF800      /* 255,   0,   0 */
-// #define Magenta         0xF81F      /* 255,   0, 255 */
 #define Blue 0xFFE0
 #define White 0xFFFF
 #define Blue 0xFD20
@@ -80,30 +78,10 @@ int16_t screenLong = TFTscreen.width();
 int verticalDotCentrePosition;
 int horizontalDotCentrePosition;
 
-int level = 1;
+int level;
 
 // direction and speed
-int speed = 1;
-
-// const int lineDrawBuffer = 1;
-// const int numInvisableRows = 2;
-// const int verticalPlayFieldStart = -1;
-// const int horizontalPlayFieldStart = 1;
-// const int tetrisGridCols = 10;
-// const int tetrisGridRows = 20;
-// const int tetrisGridRowsIncInvis = 20 + numInvisableRows;
-// const int heightPlayField = (tetrisGridRows * multiplier) + 2;
-// const int widthPlayField = (tetrisGridCols * multiplier) + 2;
-
-// const int linePosHorizontalMaxRight = horizontalPlayFieldStart + widthPlayField;
-// const int linePosVerticalMaxUp = verticalPlayFieldStart + 1;
-// const int linePosVerticalMaxDown = verticalPlayFieldStart + heightPlayField - 1;
-// const int linePosHorizontalMaxLeft = horizontalPlayFieldStart;
-
-// const int verticalStartPosition = linePosVerticalMaxUp - (numInvisableRows * multiplier);
-
-// const int middleOfPlayField = linePosHorizontalMaxLeft + (widthPlayField / 2);
-// const int horizontalStartPosition = middleOfPlayField - multiplier;
+int speed;
 
 const int lineDrawBuffer = 1;
 const int numInvisableRows = 2;
@@ -142,9 +120,10 @@ int previousVerticalGhostPosition;
 int lineMultiplier;
 
 int previousLevel = level;
+int clearedLines;
 long timeTaken;
 long previousTime;
-long fallSpeed = 1000;
+long fallSpeed;
 boolean tetriminoAlive;
 boolean tetriminoInPlay;
 boolean gameAlive;
@@ -152,22 +131,26 @@ boolean letGoOfHardDrop;
 boolean letGoOfRotate;
 int *currentTetriminoGrid;
 
-Tetrimino o;
-Tetrimino l;
-Tetrimino t;
-Tetrimino i;
-Tetrimino j;
-Tetrimino s;
-Tetrimino z;
+Tetrimino o_tetrimino;
+Tetrimino l_tetrimino;
+Tetrimino t_tetrimino;
+Tetrimino i_tetrimino;
+Tetrimino j_tetrimino;
+Tetrimino s_tetrimino;
+Tetrimino z_tetrimino;
 
 Tetrimino holdTetrimino;
 
-Tetrimino *tetriminoArray[7] = {&o, &l, &t, &i, &j, &s, &z};
+Tetrimino *tetriminoArray[7] = {&o_tetrimino, &l_tetrimino, &t_tetrimino, &i_tetrimino, &j_tetrimino, &s_tetrimino, &z_tetrimino};
 
 uint16_t playGrid[tetrisGridCols * tetrisGridRowsIncInvis];
 
-int sideBoxUnit;
+int sideBoxUnitHorizontal;
+int sideBoxUnitVertical;
 int holdBoxVertical;
+int scoreTextVertical;
+
+int levelTextVertical;
 
 int nextUpVertical;
 int sideBoxHorizontal;
@@ -190,7 +173,7 @@ double calculateFallSpeed(int level);
 void movedRight(Tetrimino tetrimino);
 void movedLeft(Tetrimino tetrimino);
 void tryToRotate(Tetrimino tetrimino);
-void tryToMoveDown(Tetrimino tetrimino);
+void tryToMoveDown(Tetrimino tetrimino, boolean incrementScore);
 void tryToMoveRight(Tetrimino tetrimino);
 void tryToMoveLeft(Tetrimino tetrimino);
 void ghostPositionUpdate(Tetrimino tetrimino);
@@ -206,9 +189,14 @@ void updateGhost(Tetrimino tetrimino);
 void updateGhostColour(Tetrimino tetrimino);
 void checkForClearLine();
 void randomSeven();
+void checkForLevelUp();
+
+void updateScore();
+void updateLevel();
 boolean emptyHold;
 boolean holdAvailable;
 int selectorRand[7];
+int score;
 
 void setup()
 {
@@ -261,7 +249,7 @@ void setup()
       1,
   };
 
-  o.initialise(oArray, oRows, oCols, Yellow, multiplier);
+  o_tetrimino.initialise(oArray, oRows, oCols, Yellow, multiplier);
 
   const int iRows = 4;
   const int iCols = 4;
@@ -270,7 +258,7 @@ void setup()
                                0, 0, 0, 0,
                                0, 0, 0, 0};
 
-  i.initialise(iArray, iRows, iCols, Blue, multiplier);
+  i_tetrimino.initialise(iArray, iRows, iCols, Blue, multiplier);
 
   const int tRows = 3;
   const int tCols = 3;
@@ -278,7 +266,7 @@ void setup()
                                1, 1, 1,
                                0, 0, 0};
 
-  t.initialise(tArray, tRows, tCols, Pink, multiplier);
+  t_tetrimino.initialise(tArray, tRows, tCols, Pink, multiplier);
 
   const int lRows = 3;
   const int lCols = 3;
@@ -286,7 +274,7 @@ void setup()
                                1, 1, 1,
                                0, 0, 0};
 
-  l.initialise(lArray, lRows, lCols, Orange, multiplier);
+  l_tetrimino.initialise(lArray, lRows, lCols, Orange, multiplier);
 
   const int jRows = 3;
   const int jCols = 3;
@@ -294,7 +282,7 @@ void setup()
                                1, 1, 1,
                                0, 0, 0};
 
-  j.initialise(jArray, jRows, jCols, DarkBlue, multiplier);
+  j_tetrimino.initialise(jArray, jRows, jCols, DarkBlue, multiplier);
 
   const int sRows = 3;
   const int sCols = 3;
@@ -302,7 +290,7 @@ void setup()
                                1, 1, 0,
                                0, 0, 0};
 
-  s.initialise(sArray, sRows, sCols, Green, multiplier);
+  s_tetrimino.initialise(sArray, sRows, sCols, Green, multiplier);
 
   const int zRows = 3;
   const int zCols = 3;
@@ -310,7 +298,7 @@ void setup()
                                0, 1, 1,
                                0, 0, 0};
 
-  z.initialise(zArray, zRows, zCols, Red, multiplier);
+  z_tetrimino.initialise(zArray, zRows, zCols, Red, multiplier);
 
   pinMode(DOWN_BUTTON, INPUT);
   pinMode(UP_BUTTON, INPUT);
@@ -328,15 +316,27 @@ void setup()
   //width : int, the width of the rectangle
   //height : int, the height of the rectangle
   TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayFieldContainer, heightPlayFieldContainer);
-
-  sideBoxUnit = (4 * multiplier) + 2 * lineDrawBuffer;
-  sideBoxHorizontal = ((screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnit) / 2) - lineDrawBuffer;
-  holdBoxVertical = 2 * verticalPlayFieldStart - lineDrawBuffer;
-  TFTscreen.rect(sideBoxHorizontal, holdBoxVertical, sideBoxUnit, sideBoxUnit);
+  TFTscreen.setTextSize(1);
+  sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
+  sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
+  sideBoxHorizontal = ((screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnitHorizontal) / 2) - lineDrawBuffer;
+  holdBoxVertical = verticalPlayFieldStart + multiplier;
+  TFTscreen.rect(sideBoxHorizontal, holdBoxVertical, sideBoxUnitHorizontal, sideBoxUnitVertical);
   TFTscreen.text("HOLD", sideBoxHorizontal, verticalPlayFieldStart);
-  nextUpVertical = holdBoxVertical + sideBoxUnit + (2 * verticalPlayFieldStart);
-  TFTscreen.text("NEXT UP", sideBoxHorizontal, holdBoxVertical + sideBoxUnit + verticalPlayFieldStart);
-  TFTscreen.rect(sideBoxHorizontal, nextUpVertical, sideBoxUnit, 2 * sideBoxUnit);
+
+  nextUpVertical = holdBoxVertical + sideBoxUnitVertical + (2 * multiplier);
+  TFTscreen.text("NEXT", sideBoxHorizontal, holdBoxVertical + sideBoxUnitVertical + multiplier);
+  TFTscreen.rect(sideBoxHorizontal, nextUpVertical, sideBoxUnitHorizontal, 2 * sideBoxUnitVertical);
+
+  scoreTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (2.5 * multiplier);
+
+  TFTscreen.text("SCORE", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + multiplier);
+  TFTscreen.text("0", sideBoxHorizontal, scoreTextVertical);
+
+  levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * multiplier);
+
+  TFTscreen.text("LEVEL", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + (4.5 * multiplier));
+  TFTscreen.text("1", sideBoxHorizontal, levelTextVertical);
 }
 
 void loop()
@@ -345,7 +345,13 @@ void loop()
   TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
   gameAlive = true;
   emptyHold = true;
-  
+  clearedLines = 0;
+  level = 1;
+  speed = 1;
+  fallSpeed = 1000;
+  score = 0;
+  updateScore();
+  updateLevel();
 
   holdAvailable = true;
   clearGrid();
@@ -368,16 +374,16 @@ void loop()
 
     for (int index = 0; index < 7; index++)
     {
-      TFTscreen.fillRect(sideBoxHorizontal+lineDrawBuffer, nextUpVertical+lineDrawBuffer, sideBoxUnit-(2* lineDrawBuffer), (2 * sideBoxUnit) - (2* lineDrawBuffer), Black);
+      TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
 
-      Tetrimino nextTet = *tetriminoArray[randomTetriminos[index+1]];
+      Tetrimino nextTet = *tetriminoArray[randomTetriminos[index + 1]];
       fillInGrid(nextTet, sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, true, nextTet.colour);
-           Tetrimino nextNextTet = *tetriminoArray[randomTetriminos[index+2]];
-      fillInGrid(nextNextTet, sideBoxHorizontal + lineDrawBuffer, nextUpVertical +sideBoxUnit+ lineDrawBuffer, true, nextNextTet.colour);
+      Tetrimino nextNextTet = *tetriminoArray[randomTetriminos[index + 2]];
+      fillInGrid(nextNextTet, sideBoxHorizontal + lineDrawBuffer, nextUpVertical + sideBoxUnitVertical + lineDrawBuffer, true, nextNextTet.colour);
       spawnTetrimino(*tetriminoArray[randomTetriminos[index]]);
-     
+
       checkForClearLine();
-       if (!gameAlive)
+      if (!gameAlive)
       {
         break;
       }
@@ -392,8 +398,8 @@ void loop()
       randomTetriminos[index + 7] = selectorRand[index];
     }
   }
-  TFTscreen.fillRect(sideBoxHorizontal+lineDrawBuffer, nextUpVertical+lineDrawBuffer, sideBoxUnit-(2* lineDrawBuffer), (2 * sideBoxUnit) - (2* lineDrawBuffer), Black);
-    TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnit - (2* lineDrawBuffer), sideBoxUnit - (2* lineDrawBuffer), Black);
+  TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
+  TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
   TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
   TFTscreen.stroke(White);
   TFTscreen.text("GAME OVER", (middleOfPlayField - strlen("GAME OVER")) / 2, verticalDotCentrePosition);
@@ -420,6 +426,36 @@ void clearGrid()
   {
     playGrid[counter] = 0;
   }
+}
+
+void checkForLevelUp()
+{
+  if (clearedLines >= level * 5)
+  {
+    clearedLines = clearedLines - (level * 5);
+    //level up!
+    level++;
+    fallSpeed = calculateFallSpeed(level);
+    updateLevel();
+  }
+}
+
+void updateScore()
+{
+  TFTscreen.fillRect(sideBoxHorizontal, scoreTextVertical, sideBoxUnitHorizontal, multiplier, Black);
+  TFTscreen.stroke(White);
+  std::string str = std::to_string(score);
+  const char *cstr2 = str.c_str();
+  TFTscreen.text(cstr2, sideBoxHorizontal, scoreTextVertical);
+}
+
+void updateLevel()
+{
+  TFTscreen.fillRect(sideBoxHorizontal, levelTextVertical, sideBoxUnitHorizontal, multiplier, Black);
+  TFTscreen.stroke(White);
+  std::string str = std::to_string(level);
+  const char *cstr2 = str.c_str();
+  TFTscreen.text(cstr2, sideBoxHorizontal, levelTextVertical);
 }
 
 void checkForClearLine()
@@ -483,6 +519,11 @@ void checkForClearLine()
         //Do something for the points here...
       }
     }
+    int lineScoreMutliplier = 1 + (2 * (lineMultiplier - 1));
+    clearedLines = clearedLines + lineScoreMutliplier;
+    score = score + (100 * lineScoreMutliplier * level);
+    updateScore();
+    checkForLevelUp();
   }
 }
 
@@ -509,7 +550,7 @@ void spawnTetrimino(Tetrimino tetrimino)
     timeTaken = millis() - previousTime;
     if (timeTaken >= fallSpeed)
     {
-      tryToMoveDown(tetrimino);
+      tryToMoveDown(tetrimino, false);
       previousTime = millis();
     };
   }
@@ -522,7 +563,7 @@ void spawnTetrimino(Tetrimino tetrimino)
     // Erase the ghost
     ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, Black);
     // erase the hold of the old tetrimino
-    TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnit - (2* lineDrawBuffer), sideBoxUnit - (2* lineDrawBuffer), Black);
+    TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
     // colour in the hold with the new tetrimino
     fillInGrid(tetrimino, sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, true, tetrimino.colour);
 
@@ -638,7 +679,7 @@ void moveTetrimino(Tetrimino tetrimino)
   if (downButtonState == HIGH)
   {
     //TODO - implement legit faster fall rules
-    tryToMoveDown(tetrimino);
+    tryToMoveDown(tetrimino, true);
   }
   if (upButtonState == HIGH && letGoOfHardDrop)
   {
@@ -662,7 +703,6 @@ void moveTetrimino(Tetrimino tetrimino)
   {
 
     letGoOfRotate = false;
-    SerialUSB.println("ROT!");
     tryToRotate(tetrimino);
   }
   if (bButtonState == LOW)
@@ -677,14 +717,17 @@ void moveTetrimino(Tetrimino tetrimino)
 void hardDrop(Tetrimino tetrimino)
 {
   int hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
-
+  int counter = 0;
   while (!hitBottom(tetrimino, hypotheticalVerticalDotPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalDotPosition)))
   {
     verticalDotPosition = hypotheticalVerticalDotPosition;
-    hypotheticalVerticalDotPosition = verticalDotPosition +  multiplier;
+    hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
+    counter++;
   }
   movedDown(tetrimino);
   tetriminoAlive = false;
+  score = score + (2 * counter);
+  updateScore();
 }
 
 void ghostPositionUpdate(Tetrimino tetrimino)
@@ -695,7 +738,7 @@ void ghostPositionUpdate(Tetrimino tetrimino)
   while (!hitBottom(tetrimino, hypotheticalVerticalGhostPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalGhostPosition)))
   {
     verticalGhostPosition = hypotheticalVerticalGhostPosition;
-    hypotheticalVerticalGhostPosition = verticalGhostPosition +  multiplier;
+    hypotheticalVerticalGhostPosition = verticalGhostPosition + multiplier;
   }
 }
 
@@ -709,21 +752,21 @@ void updateGhost(Tetrimino tetrimino)
 void spawnGhost(Tetrimino tetrimino)
 {
   verticalGhostPosition = verticalDotPosition;
-  int hypotheticalVerticalGhostPosition = verticalGhostPosition +  multiplier;
+  int hypotheticalVerticalGhostPosition = verticalGhostPosition + multiplier;
 
   while (!hitBottom(tetrimino, hypotheticalVerticalGhostPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalGhostPosition)))
   {
     verticalGhostPosition = hypotheticalVerticalGhostPosition;
-    hypotheticalVerticalGhostPosition = verticalGhostPosition +  multiplier;
+    hypotheticalVerticalGhostPosition = verticalGhostPosition + multiplier;
   }
   ghostColour(tetrimino);
 }
 
-void tryToMoveDown(Tetrimino tetrimino)
+void tryToMoveDown(Tetrimino tetrimino, boolean incrementScore)
 {
   //if the block settles above the visable line, end the game.
 
-  int hypotheticalVerticalDotPosition = verticalDotPosition +  multiplier;
+  int hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
   if (hitBottom(tetrimino, hypotheticalVerticalDotPosition) || (overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalDotPosition)))
   {
     tetriminoAlive = false;
@@ -732,6 +775,11 @@ void tryToMoveDown(Tetrimino tetrimino)
   {
     verticalDotPosition = hypotheticalVerticalDotPosition;
     movedDown(tetrimino);
+    if (incrementScore)
+    {
+      score++;
+      updateScore();
+    }
   }
 }
 
@@ -821,7 +869,7 @@ boolean overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPosi
 
 double calculateFallSpeed(int level)
 {
-  return pow(0.8 - ((level - 1) * 0.007), (level - 1));
+  return 1000 * pow(0.8 - ((level - 1) * 0.007), (level - 1));
 }
 
 void movedRight(Tetrimino tetrimino)
@@ -897,14 +945,16 @@ void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColo
 
 void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour)
 {
-      if (startHorizontalDotPosition > linePosHorizontalMaxRight)
-      {
+  if (startHorizontalDotPosition > linePosHorizontalMaxRight)
+  {
 
-        startHorizontalDotPosition = startHorizontalDotPosition + (0.5 * (4 - tetrimino.cols)*multiplier);
-        if ( tetrimino.rows!=4 ){
-        startVerticalDotPosition = startVerticalDotPosition + multiplier;
-        }
-      }
+    startHorizontalDotPosition = startHorizontalDotPosition + (0.5 * (4 - tetrimino.cols) * multiplier);
+    if (tetrimino.rows != 4)
+    {
+      startVerticalDotPosition = startVerticalDotPosition + multiplier;
+      startVerticalDotPosition = startVerticalDotPosition - (0.5 * multiplier);
+    }
+  }
 
   for (int m = 0; m < tetrimino.rows; m++)
   {
