@@ -1,5 +1,5 @@
 
-// #include <SD.h>
+#include <SD.h>
 #include <TFT.h> // Arduino LCD library
 #include <SPI.h>
 #include <Arduino.h>
@@ -9,6 +9,8 @@
 // #define rst 8
 #include "tetrimino.h"
 #include <EEPROM.h>
+// #include <SdFat.h>
+// #include <Arduino_ST7735_STM.h>
 
 /*
  STM32 SPI1/SPI2 pins:
@@ -60,7 +62,7 @@
 int multiplier;
 
 // create an instance of the library
-TFT TFTscreen = TFT(TFT_CS, TFT_DC, TFT_RST);
+TFT  TFTscreen = TFT (TFT_CS, TFT_DC, TFT_RST);
 
 // variables will change:
 int downButtonState = 0;  // variable for reading the pushbutton status
@@ -198,13 +200,132 @@ boolean holdAvailable;
 int selectorRand[7];
 int score;
 
+ #define SD_MOSI PB15
+ #define SD_MISO PB14
+ #define SD_SCK  PB13
+ #define SD_CS   PB12
+
+//    SPIClass SPI_2(SD_MOSI,SD_MISO, SD_SCK,SD_CS);
+// // SdSpiCard card();
+// SdFat sd(&SPI_2);
+
+// SdFile file;
+#define NLINES 32
+#define BUF_WD 160
+uint16_t buf[BUF_WD*NLINES] __attribute__((aligned(4)));
+
+// int showBMP(char *filename)
+// {
+//   int bmpWd, bmpHt, bmpBits, bmpNumCols, y=0;
+//   uint16_t pal[256];
+  
+//   if(!file.open(filename, O_CREAT | O_RDONLY)) {
+//     TFTscreen.fillScreen(Yellow);
+//     Serial.print(F("Cannot open "));
+//     Serial.println(filename);
+//     delay(1000);
+//     //return -1;
+//   }
+//   file.seekSet(0);
+//   file.read(buf,54);
+//   uint8_t *buf8 = (uint8_t *)buf;
+//   bmpWd = buf8[18]+buf8[19]*256;
+//   bmpHt = buf8[22]+buf8[23]*256;
+//   bmpBits = buf8[28];
+//   bmpNumCols = buf8[46]+buf8[47]*256;
+//   if(bmpBits<=8) {
+//     file.read(buf,bmpNumCols*4);
+//     for(int i=0;i<bmpNumCols;i++) pal[i]=RGBto565(buf8[2+i*4],buf8[1+i*4],buf8[i*4]);
+//   }
+//   while(file.available() && y<bmpHt) {
+//     buf8 = (uint8_t *)buf+BUF_WD*2;
+//     if(bmpBits==4) {
+//       file.read(buf8,bmpWd/2);
+//       for(int i=0;i<bmpWd/2;i++) {
+//         buf[i*2+0] = pal[buf8[i]>>4];
+//         buf[i*2+1] = pal[buf8[i]&0xf];
+//       }
+//     } else
+//     if(bmpBits==8) {
+//       file.read(buf8,bmpWd);
+//       for(int i=0;i<bmpWd;i++) buf[i] = pal[buf8[i]];
+//     } else {
+//       file.read(buf8,bmpWd*3);
+//       for(int i=0;i<bmpWd;i++) buf[i] = RGBto565(buf8[i*3+2],buf8[i*3+1],buf8[i*3+0]);
+//     }
+//     TFTscreen.drawBitmap()
+//      TFTscreen.drawImage((TFTscreen.width()-bmpWd)/2,TFTscreen.height()-1-y,bmpWd,1,buf);
+//     y++;
+//   }
+//   file.close();
+//   return 1;
+// }
 void setup()
 {
-  SerialUSB.begin();
-
+  
+    SerialUSB.begin();
+  delay(2000);
   // Put this line at the beginning of every sketch that uses the GLCD:
   TFTscreen.begin();
   TFTscreen.setRotation(0);
+  TFTscreen.background(Red);
+
+
+  delay(2000);
+SerialUSB.println("Beginning card...");
+// if ( !sd.cardBegin(SD_CS, SD_SCK_MHZ(18))){
+//   SerialUSB.println("Card has not begun!");
+//     while(1);
+// }
+//   if(!sd.fsBegin()) {
+//   SerialUSB.println("File system has not begun!");
+//     while(1);
+// }
+// if(!sd.ls()){
+//   SerialUSB.println("HAHAHAHA");
+// }
+
+
+  SD.begin(PB12, PB15, PB14, PB13);
+ 
+  
+
+
+PImage parrotImage = TFTscreen.loadImage("PARROT.BMP");
+TFTscreen.image(parrotImage,0,0);
+
+
+ File parrot = SD.open("PARROT.BMP", O_READ); 
+
+    SerialUSB.println("show parrot...");
+
+if (!parrot.available()){
+  SerialUSB.println("Parrot is off limits!");
+    while(1);
+}
+  
+  // // SerialUSB.write(parrot.read());
+  // SerialUSB.println(parrot.available());
+
+//   int16_t byte, x = 0, y = 0;
+//   while ((byte = parrot.read()) != -1)
+//   {
+//     int16_t byte2 = parrot.read();
+//     uint16_t color = (byte2 << 8) | (byte & 0xff);
+//     TFTscreen.drawPixel(x, y, color);
+//     x++;
+//     SerialUSB.printf("%x\r\n", color);
+//     if (x > TFT_MAX_WIDTH)
+//     {
+//       x = 0;
+//       y++;
+//       // while (1)
+//       //   ;
+//     }
+//   }
+// parrot.close();
+  delay(5000);
+
   multiplier = 1;
   while (((float)screenLong / ((float)(tetrisGridRows * (multiplier + 1)))) > 1.0)
   {
