@@ -9,8 +9,6 @@
 // #define rst 8
 #include "tetrimino.h"
 #include <EEPROM.h>
-// #include <SdFat.h>
-// #include <Arduino_ST7735_STM.h>
 
 /*
  STM32 SPI1/SPI2 pins:
@@ -60,6 +58,7 @@
 #define GreenYellow 0xAFE5
 
 int multiplier;
+int textMultiplier;
 
 // create an instance of the library
 TFT  TFTscreen = TFT (TFT_CS, TFT_DC, TFT_RST);
@@ -84,6 +83,31 @@ int level;
 
 // direction and speed
 int speed;
+
+
+  // Text magnification
+  int textMag ;
+
+  int textHeight ;
+int textWidth ;
+
+  int menuVerticalShift ;
+
+ size_t startStringLength = strlen("START");
+    size_t scoresStringLength = strlen("SCORES");
+   size_t settingsStringLength = strlen("SETTINGS");
+
+int startTextLength ;
+   int startTextX ;
+    int startTextY ;
+    int scoreTextLength ;
+int scoreTextX  ;
+    int scoreTextY  ;
+    int settingsTextLength ;
+int settingsTextX ;
+    int settingsTextY  ;
+
+
 
 const int lineDrawBuffer = 1;
 const int numInvisableRows = 2;
@@ -192,9 +216,17 @@ void updateGhostColour(Tetrimino tetrimino);
 void checkForClearLine();
 void randomSeven();
 void checkForLevelUp();
+void gameOver();
+void gameScreenSetup();
+int menuSetup();
+void enterMenu();
 
+void   enterGame();
+  void  enterScores();
+   void enterSettings();
 void updateScore();
 void updateLevel();
+void changeSelectionStartMenu(int selection);
 boolean emptyHold;
 boolean holdAvailable;
 int selectorRand[7];
@@ -205,132 +237,37 @@ int score;
  #define SD_SCK  PB13
  #define SD_CS   PB12
 
-//    SPIClass SPI_2(SD_MOSI,SD_MISO, SD_SCK,SD_CS);
-// // SdSpiCard card();
-// SdFat sd(&SPI_2);
+  File scoreFile;
 
-// SdFile file;
-#define NLINES 32
-#define BUF_WD 160
-uint16_t buf[BUF_WD*NLINES] __attribute__((aligned(4)));
-
-// int showBMP(char *filename)
-// {
-//   int bmpWd, bmpHt, bmpBits, bmpNumCols, y=0;
-//   uint16_t pal[256];
-  
-//   if(!file.open(filename, O_CREAT | O_RDONLY)) {
-//     TFTscreen.fillScreen(Yellow);
-//     Serial.print(F("Cannot open "));
-//     Serial.println(filename);
-//     delay(1000);
-//     //return -1;
-//   }
-//   file.seekSet(0);
-//   file.read(buf,54);
-//   uint8_t *buf8 = (uint8_t *)buf;
-//   bmpWd = buf8[18]+buf8[19]*256;
-//   bmpHt = buf8[22]+buf8[23]*256;
-//   bmpBits = buf8[28];
-//   bmpNumCols = buf8[46]+buf8[47]*256;
-//   if(bmpBits<=8) {
-//     file.read(buf,bmpNumCols*4);
-//     for(int i=0;i<bmpNumCols;i++) pal[i]=RGBto565(buf8[2+i*4],buf8[1+i*4],buf8[i*4]);
-//   }
-//   while(file.available() && y<bmpHt) {
-//     buf8 = (uint8_t *)buf+BUF_WD*2;
-//     if(bmpBits==4) {
-//       file.read(buf8,bmpWd/2);
-//       for(int i=0;i<bmpWd/2;i++) {
-//         buf[i*2+0] = pal[buf8[i]>>4];
-//         buf[i*2+1] = pal[buf8[i]&0xf];
-//       }
-//     } else
-//     if(bmpBits==8) {
-//       file.read(buf8,bmpWd);
-//       for(int i=0;i<bmpWd;i++) buf[i] = pal[buf8[i]];
-//     } else {
-//       file.read(buf8,bmpWd*3);
-//       for(int i=0;i<bmpWd;i++) buf[i] = RGBto565(buf8[i*3+2],buf8[i*3+1],buf8[i*3+0]);
-//     }
-//     TFTscreen.drawBitmap()
-//      TFTscreen.drawImage((TFTscreen.width()-bmpWd)/2,TFTscreen.height()-1-y,bmpWd,1,buf);
-//     y++;
-//   }
-//   file.close();
-//   return 1;
-// }
 void setup()
 {
   
     SerialUSB.begin();
-  delay(2000);
-  // Put this line at the beginning of every sketch that uses the GLCD:
   TFTscreen.begin();
   TFTscreen.setRotation(0);
-  TFTscreen.background(Red);
-
 
   delay(2000);
-SerialUSB.println("Beginning card...");
-// if ( !sd.cardBegin(SD_CS, SD_SCK_MHZ(18))){
-//   SerialUSB.println("Card has not begun!");
-//     while(1);
-// }
-//   if(!sd.fsBegin()) {
-//   SerialUSB.println("File system has not begun!");
-//     while(1);
-// }
-// if(!sd.ls()){
-//   SerialUSB.println("HAHAHAHA");
-// }
 
 
   SD.begin(PB12, PB15, PB14, PB13);
- 
-  
 
 
-PImage parrotImage = TFTscreen.loadImage("PARROT.BMP");
-TFTscreen.image(parrotImage,0,0);
 
 
- File parrot = SD.open("PARROT.BMP", O_READ); 
+// PImage parrotImage = TFTscreen.loadImage("PARROT.BMP");
+// TFTscreen.image(parrotImage,0,0);
 
-    SerialUSB.println("show parrot...");
-
-if (!parrot.available()){
-  SerialUSB.println("Parrot is off limits!");
-    while(1);
-}
-  
-  // // SerialUSB.write(parrot.read());
-  // SerialUSB.println(parrot.available());
-
-//   int16_t byte, x = 0, y = 0;
-//   while ((byte = parrot.read()) != -1)
-//   {
-//     int16_t byte2 = parrot.read();
-//     uint16_t color = (byte2 << 8) | (byte & 0xff);
-//     TFTscreen.drawPixel(x, y, color);
-//     x++;
-//     SerialUSB.printf("%x\r\n", color);
-//     if (x > TFT_MAX_WIDTH)
-//     {
-//       x = 0;
-//       y++;
-//       // while (1)
-//       //   ;
-//     }
-//   }
-// parrot.close();
-  delay(5000);
+//   delay(5000);
 
   multiplier = 1;
   while (((float)screenLong / ((float)(tetrisGridRows * (multiplier + 1)))) > 1.0)
   {
     multiplier++;
   }
+
+    textMultiplier = multiplier / 7 ;
+
+    SerialUSB.println(textMultiplier);
   heightPlayField = (tetrisGridRows * multiplier);
   heightPlayFieldContainer = heightPlayField + (2 * lineDrawBuffer);
   widthPlayField = (tetrisGridCols * multiplier);
@@ -428,40 +365,65 @@ if (!parrot.available()){
   pinMode(B_BUTTON, INPUT);
   pinMode(A_BUTTON, INPUT);
 
-  // clear the screen with a black background
-  TFTscreen.background(Black);
+
+   textMag = 2 ;
+
+   textHeight = textMultiplier*8;
+ textWidth = textMultiplier*6;
+
+   menuVerticalShift  = verticalDotCentrePosition - (textMag * textHeight) ;
+
+ startTextLength = (textWidth*startStringLength);
+    startTextX = (screenShort - startTextLength ) / 2;
+     startTextY =  menuVerticalShift+ (textHeight);
+     scoreTextLength = (textWidth*scoresStringLength);
+ scoreTextX =(screenShort - scoreTextLength ) / 2 ;
+     scoreTextY =  menuVerticalShift+ (3*textHeight) ;
+     settingsTextLength = (textWidth*settingsStringLength);
+ settingsTextX =  (screenShort - settingsTextLength ) / 2;
+     settingsTextY =menuVerticalShift+ (5*textHeight) ;
+
+
+  
+TFTscreen.setTextSize(textMultiplier);
+
+  if (!SD.exists("scores.txt")) {
+     TFTscreen.background(Red);
   TFTscreen.stroke(White);
-  //screen.rect(xStart, yStart, width, height);
-  //xStart : int, the horizontal position where the line starts
-  //yStart : int, the vertical position where the line starts
-  //width : int, the width of the rectangle
-  //height : int, the height of the rectangle
-  TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayFieldContainer, heightPlayFieldContainer);
-  TFTscreen.setTextSize(1);
-  sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
-  sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
-  sideBoxHorizontal = ((screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnitHorizontal) / 2) - lineDrawBuffer;
-  holdBoxVertical = verticalPlayFieldStart + multiplier;
-  TFTscreen.rect(sideBoxHorizontal, holdBoxVertical, sideBoxUnitHorizontal, sideBoxUnitVertical);
-  TFTscreen.text("HOLD", sideBoxHorizontal, verticalPlayFieldStart);
-
-  nextUpVertical = holdBoxVertical + sideBoxUnitVertical + (2 * multiplier);
-  TFTscreen.text("NEXT", sideBoxHorizontal, holdBoxVertical + sideBoxUnitVertical + multiplier);
-  TFTscreen.rect(sideBoxHorizontal, nextUpVertical, sideBoxUnitHorizontal, 2 * sideBoxUnitVertical);
-
-  scoreTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (2.5 * multiplier);
-
-  TFTscreen.text("SCORE", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + multiplier);
-  TFTscreen.text("0", sideBoxHorizontal, scoreTextVertical);
-
-  levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * multiplier);
-
-  TFTscreen.text("LEVEL", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + (4.5 * multiplier));
-  TFTscreen.text("1", sideBoxHorizontal, levelTextVertical);
+  TFTscreen.text("SCORES FILE BROKEN :(",0,0);
+  } 
+ 
 }
 
 void loop()
 {
+ enterMenu();
+}
+
+
+void enterMenu(){
+int selected = menuSetup();
+switch(selected){
+  case 0 : 
+  enterGame();
+  break;
+  case 1 :
+  enterScores();
+  break; 
+  case 2 :
+  enterSettings();
+  break;
+  default :
+    TFTscreen.background(Yellow);
+  TFTscreen.stroke(Black);
+  TFTscreen.text("CRIES IN IMPOSSSIBRU :(",0,0);
+
+}
+}
+
+
+void   enterGame(){
+    gameScreenSetup();
 
   TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
   gameAlive = true;
@@ -519,12 +481,214 @@ void loop()
       randomTetriminos[index + 7] = selectorRand[index];
     }
   }
-  TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
+ gameOver();
+  delay(1000);
+
+  
+  
+  // Here, what I want to do is, I want to access the database of saved people and their scores. 
+  //Step one, select player or create new player.
+  // If select player, display the names with arrow keys, A selects the name, B goes back to the previous screen.
+  // Once selected, display their highscore and current score.
+  // If the current score beats the high score, some kind of congrats and then overwrite the previous.
+  // If it does not, say, better luck next timen [name].
+
+  // If creating a new player, simply add their highscore and name.
+  // Welcome, [name]. Your highscore has now been saved.
+
+  // Here's where you rank amongst others:
+  // a reel of the scores and their usernames
+  // Some kind of ordering will have to happen here with the highscores (with the current person highlighted or in a different colour (green?)).
+
+  // I should save them in order so that the highscore accessed from the menu is just a matter of reading the text file and displaying.
+  // Clicking next displays a prophecy: 
+  // no one has yet to beat the mighty [name]
+
+    scoreFile = SD.open("scores.txt");
+  while (scoreFile.available()) {
+SerialUSB.write(scoreFile.read());
+  }
+  scoreFile.close();
+  
+}
+  void  enterScores(){
+    
+    TFTscreen.background(Yellow);
+  TFTscreen.stroke(Black);
+  TFTscreen.text("UNDER CONSTRUCTION :(",0,0);
+
+    while (true){
+  bButtonState = digitalRead(B_BUTTON);
+
+  if (bButtonState == HIGH)
+  {
+    break;
+  }
+
+  }
+  }
+   void enterSettings(){
+      
+    TFTscreen.background(Yellow);
+  TFTscreen.stroke(Black);
+  TFTscreen.text("UNDER CONSTRUCTION :(",0,0);
+
+      while (true){
+  bButtonState = digitalRead(B_BUTTON);
+
+  if (bButtonState == HIGH)
+  {
+    break;
+  }
+   }
+   }
+
+
+
+int menuSetup(){
+  TFTscreen.background(Black);
+  TFTscreen.stroke(White);
+
+TFTscreen.setTextSize(textMag * textMultiplier );
+size_t jetrisStringLength = strlen("JETRIS");
+
+
+
+  TFTscreen.text("JETRIS", (screenShort - (textMag*textWidth*jetrisStringLength) ) / 2, menuVerticalShift - (textMag*textHeight));
+  TFTscreen.setTextSize(textMultiplier);
+
+boolean letGoOfUp = true;
+boolean letGoOfDown= true;
+  
+
+   int selected = 0;
+   changeSelectionStartMenu(selected);
+
+  while (true){
+  downButtonState = digitalRead(DOWN_BUTTON);
+  upButtonState = digitalRead(UP_BUTTON);
+  aButtonState = digitalRead(A_BUTTON);
+
+  if (downButtonState == HIGH && letGoOfDown )
+  {
+    if ( selected < 2){
+      selected ++;
+      changeSelectionStartMenu(selected);
+    }
+     letGoOfDown = false;
+  }
+  if (upButtonState == HIGH && letGoOfUp )
+  {
+        if ( selected > 0){
+      selected --;
+      changeSelectionStartMenu(selected);
+    }
+    letGoOfUp = false;
+  }
+
+  if (aButtonState == HIGH )
+  {
+    return selected;
+  }
+  if (upButtonState == LOW )
+  {
+    letGoOfUp = true;
+  }
+  
+  if (downButtonState == LOW)
+  {
+    letGoOfDown = true;
+  }
+
+  delay (50);
+  }
+
+
+
+}
+
+void changeSelectionStartMenu(int selection){
+boolean select[3] =  {false,false,false};
+select[selection] = true;
+
+if(select[0]){
+  TFTscreen.stroke(Green);
+   TFTscreen.text("START", startTextX, startTextY);
+   TFTscreen.drawRect( startTextX, startTextY +textHeight, startTextLength, 1, Green);
+}else{
+  TFTscreen.stroke(White);
+   TFTscreen.text("START", startTextX,startTextY);
+   TFTscreen.drawRect( startTextX, startTextY + textHeight,  startTextLength, 1, Black);
+}
+if(select[1]){
+       TFTscreen.stroke(Green);
+  
+   TFTscreen.text("SCORES", scoreTextX,scoreTextY);
+  
+      TFTscreen.drawRect( scoreTextX,scoreTextY + textHeight,  scoreTextLength, 1, Green);
+}else{
+       TFTscreen.stroke(White);
+    
+   TFTscreen.text("SCORES", scoreTextX,scoreTextY);
+   
+      TFTscreen.drawRect( scoreTextX,scoreTextY+ textHeight,  scoreTextLength, 1, Black);
+
+}
+
+if(select[2] ){
+  TFTscreen.stroke(Green);
+      
+   TFTscreen.text("SETTINGS", settingsTextX,settingsTextY);
+   TFTscreen.drawRect( settingsTextX, settingsTextY+ textHeight,  settingsTextLength, 1, Green);
+
+}else{
+
+TFTscreen.stroke(White);
+  TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
+  TFTscreen.drawRect( settingsTextX, settingsTextY + textHeight,  settingsTextLength, 1, Black);
+}
+
+}
+
+void gameScreenSetup(){
+   // clear the screen with a black background
+  TFTscreen.background(Black);
+  TFTscreen.stroke(White);
+  //screen.rect(xStart, yStart, width, height);
+  //xStart : int, the horizontal position where the line starts
+  //yStart : int, the vertical position where the line starts
+  //width : int, the width of the rectangle
+  //height : int, the height of the rectangle
+  TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayFieldContainer, heightPlayFieldContainer);
+  TFTscreen.setTextSize(textMultiplier);
+  sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
+  sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
+  sideBoxHorizontal = ((screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnitHorizontal) / 2) - lineDrawBuffer;
+  holdBoxVertical = verticalPlayFieldStart + multiplier;
+  TFTscreen.rect(sideBoxHorizontal, holdBoxVertical, sideBoxUnitHorizontal, sideBoxUnitVertical);
+  TFTscreen.text("HOLD", sideBoxHorizontal, verticalPlayFieldStart);
+
+  nextUpVertical = holdBoxVertical + sideBoxUnitVertical + (2 * multiplier);
+  TFTscreen.text("NEXT", sideBoxHorizontal, holdBoxVertical + sideBoxUnitVertical + multiplier);
+  TFTscreen.rect(sideBoxHorizontal, nextUpVertical, sideBoxUnitHorizontal, 2 * sideBoxUnitVertical);
+
+  scoreTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (2.5 * multiplier);
+
+  TFTscreen.text("SCORE", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + multiplier);
+  TFTscreen.text("0", sideBoxHorizontal, scoreTextVertical);
+
+  levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * multiplier);
+
+  TFTscreen.text("LEVEL", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + (4.5 * multiplier));
+  TFTscreen.text("1", sideBoxHorizontal, levelTextVertical);
+}
+
+void gameOver(){
+    TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
   TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
   TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
   TFTscreen.stroke(White);
   TFTscreen.text("GAME OVER", (middleOfPlayField - strlen("GAME OVER")) / 2, verticalDotCentrePosition);
-  delay(5000);
 }
 
 void randomSeven()
@@ -797,30 +961,30 @@ void moveTetrimino(Tetrimino tetrimino)
     letGoOfHardDrop = true;
   }
 
-  if (downButtonState == HIGH)
+  if (downButtonState == HIGH && gameAlive)
   {
     //TODO - implement legit faster fall rules
     tryToMoveDown(tetrimino, true);
   }
-  if (upButtonState == HIGH && letGoOfHardDrop)
+  if (upButtonState == HIGH && letGoOfHardDrop&& gameAlive)
   {
     hardDrop(tetrimino);
   }
-  if (leftButtonState == HIGH)
+  if (leftButtonState == HIGH && gameAlive)
   {
     tryToMoveLeft(tetrimino);
   }
-  if (rightButtonState == HIGH)
+  if (rightButtonState == HIGH && gameAlive)
   {
 
     tryToMoveRight(tetrimino);
   }
 
-  if (aButtonState == HIGH && holdAvailable)
+  if (aButtonState == HIGH && holdAvailable&& gameAlive)
   {
     tetriminoInPlay = false;
   }
-  if (bButtonState == HIGH && letGoOfRotate)
+  if (bButtonState == HIGH && letGoOfRotate&& gameAlive)
   {
 
     letGoOfRotate = false;
