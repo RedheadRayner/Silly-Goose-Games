@@ -3,26 +3,7 @@
 #include <TFT.h> // Arduino LCD library
 #include <SPI.h>
 #include <Arduino.h>
-// pin definition for the Uno
-// #define cs 10
-// #define dc 9
-// #define rst 8
 #include "tetrimino.h"
-#include <EEPROM.h>
-
-/*
- STM32 SPI1/SPI2 pins:
- 
- SPI1 MOSI PA7
- SPI1 MISO PA6
- SPI1 SCK  PA5
- SPI1 CS   PA4
- SPI2 MOSI PB15
- SPI2 MISO PB14
- SPI2 SCK  PB13
- SPI2 CS   PB12
-*/
-
 #define TFT_CS PB10
 #define TFT_DC PB0
 #define TFT_RST PB1
@@ -35,10 +16,6 @@
 #define B_BUTTON PA1
 #define A_BUTTON PA0
 
-#define TFT_MAX_WIDTH 120
-#define TFT_MAX_HEIGHT 160
-#define CELL_SIZE 8
-
 // Color definitions
 /* some RGB color definitions                                                 */
 #define Black 0x0000
@@ -46,13 +23,11 @@
 #define Yellow 0x03EF
 #define DarkBlue 0x7800
 #define Pink 0x780F
-#define Olive 0x7BE0
 #define LightGrey 0xC618
 #define DarkGrey 0x7BEF
 #define Red 0x001F
 #define Orange 0x02EF
 #define Green 0x07E0
-#define Blue 0xFFE0
 #define White 0xFFFF
 #define Blue 0xFD20
 #define GreenYellow 0xAFE5
@@ -61,7 +36,7 @@ int multiplier;
 int textMultiplier;
 
 // create an instance of the library
-TFT  TFTscreen = TFT (TFT_CS, TFT_DC, TFT_RST);
+TFT TFTscreen = TFT(TFT_CS, TFT_DC, TFT_RST);
 
 // variables will change:
 int downButtonState = 0;  // variable for reading the pushbutton status
@@ -75,7 +50,6 @@ int16_t screenShort = TFTscreen.height();
 int16_t screenLong = TFTscreen.width();
 
 // initial position of the point is the middle of the screen
-// initial position of the point is the middle of the screen
 int verticalDotCentrePosition;
 int horizontalDotCentrePosition;
 
@@ -84,29 +58,27 @@ int level;
 // direction and speed
 int speed;
 
+int textHeight;
+int textWidth;
 
-  // Text magnification
-  int textMag ;
+int menuVerticalShift;
 
-  int textHeight ;
-int textWidth ;
+int startTextLength;
+int startTextX;
+int startTextY;
+int scoreTextLength;
+int scoreTextX;
+int scoreTextY;
+int settingsTextLength;
+int settingsTextX;
+int settingsTextY;
 
-  int menuVerticalShift ;
 
- size_t startStringLength = strlen("START");
-    size_t scoresStringLength = strlen("SCORES");
-   size_t settingsStringLength = strlen("SETTINGS");
-
-int startTextLength ;
-   int startTextX ;
-    int startTextY ;
-    int scoreTextLength ;
-int scoreTextX  ;
-    int scoreTextY  ;
-    int settingsTextLength ;
-int settingsTextX ;
-    int settingsTextY  ;
-
+int scoreTrueTextLength;
+int scoreTrueTextX;
+int scoreBestTextLength;
+int scoreBestTextX;
+int scoreBestTextY;
 
 
 const int lineDrawBuffer = 1;
@@ -150,11 +122,11 @@ int clearedLines;
 long timeTaken;
 long previousTime;
 long fallSpeed;
-boolean tetriminoAlive;
-boolean tetriminoInPlay;
-boolean gameAlive;
-boolean letGoOfHardDrop;
-boolean letGoOfRotate;
+bool tetriminoAlive;
+bool tetriminoInPlay;
+bool gameAlive;
+bool letGoOfHardDrop;
+bool letGoOfRotate;
 int *currentTetriminoGrid;
 
 Tetrimino o_tetrimino;
@@ -184,12 +156,12 @@ int sideBoxHorizontal;
 void spawnTetrimino(Tetrimino tetrimino);
 
 void moveTetrimino(Tetrimino tetrimino);
-void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour);
+void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour);
 
-void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour);
+void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour);
 
-void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour);
-void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour);
+void fillInOldGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour);
+void fillInNewGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour);
 void createNewColouredPoints(Tetrimino tetrimino);
 void erasePreviousColouredPoints(Tetrimino tetrimino);
 void moveScreenTetrimino(Tetrimino tetrimino);
@@ -199,14 +171,13 @@ double calculateFallSpeed(int level);
 void movedRight(Tetrimino tetrimino);
 void movedLeft(Tetrimino tetrimino);
 void tryToRotate(Tetrimino tetrimino);
-void tryToMoveDown(Tetrimino tetrimino, boolean incrementScore);
+void tryToMoveDown(Tetrimino tetrimino, bool incrementScore);
 void tryToMoveRight(Tetrimino tetrimino);
 void tryToMoveLeft(Tetrimino tetrimino);
 void ghostPositionUpdate(Tetrimino tetrimino);
-boolean hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition);
-boolean overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPosition, int hypotheticalVerticalDotPosition);
+bool hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition);
+bool overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPosition, int hypotheticalVerticalDotPosition);
 void commitToPlayGrid(Tetrimino tetrimino);
-void placeTetriminoInHold(Tetrimino tetrimino);
 void clearGrid();
 void hardDrop(Tetrimino tetrimino);
 void spawnGhost(Tetrimino tetrimino);
@@ -220,44 +191,47 @@ void gameOver();
 void gameScreenSetup();
 int menuSetup();
 void enterMenu();
-
-void   enterGame();
-  void  enterScores();
-   void enterSettings();
+char *newPlayer();
+void enterGameEndedPhase();
+void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour);
+void makeSelectionScoreArrows();
+void changeSelectionScoreName(int letterNum, char *character, uint16_t colour);
+void textNameUnderscore(int letterNum, uint16_t colour);
+int scoreTypeSelection();
+void enterGame();
+void enterScores();
+void enterSettings();
 void updateScore();
 void updateLevel();
 void changeSelectionStartMenu(int selection);
-boolean emptyHold;
-boolean holdAvailable;
+void changeSelectionScoreMenu(int selection);
+bool emptyHold;
+bool holdAvailable;
 int selectorRand[7];
 int score;
 
- #define SD_MOSI PB15
- #define SD_MISO PB14
- #define SD_SCK  PB13
- #define SD_CS   PB12
+#define SD_MOSI PB15
+#define SD_MISO PB14
+#define SD_SCK PB13
+#define SD_CS PB12
 
-  File scoreFile;
+File scoreFile;
 
 void setup()
 {
-  
-    SerialUSB.begin();
+
+  SerialUSB.begin();
   TFTscreen.begin();
   TFTscreen.setRotation(0);
 
   delay(2000);
 
+  SD.begin(SD_CS, SD_MOSI, SD_MISO, SD_SCK);
 
-  SD.begin(PB12, PB15, PB14, PB13);
-
-
-
-
-// PImage parrotImage = TFTscreen.loadImage("PARROT.BMP");
-// TFTscreen.image(parrotImage,0,0);
-
-//   delay(5000);
+  // PImage parrotImage = TFTscreen.loadImage("PARROT.BMP");
+  // TFTscreen.image(parrotImage,0,0);
+  //
+  //   delay(5000);
 
   multiplier = 1;
   while (((float)screenLong / ((float)(tetrisGridRows * (multiplier + 1)))) > 1.0)
@@ -265,9 +239,8 @@ void setup()
     multiplier++;
   }
 
-    textMultiplier = multiplier / 7 ;
+  textMultiplier = multiplier / 7;
 
-    SerialUSB.println(textMultiplier);
   heightPlayField = (tetrisGridRows * multiplier);
   heightPlayFieldContainer = heightPlayField + (2 * lineDrawBuffer);
   widthPlayField = (tetrisGridCols * multiplier);
@@ -365,65 +338,81 @@ void setup()
   pinMode(B_BUTTON, INPUT);
   pinMode(A_BUTTON, INPUT);
 
+  textHeight = textMultiplier * 8;
+  textWidth = textMultiplier * 6;
 
-   textMag = 2 ;
+  menuVerticalShift = verticalDotCentrePosition - (2 * textHeight);
 
-   textHeight = textMultiplier*8;
- textWidth = textMultiplier*6;
-
-   menuVerticalShift  = verticalDotCentrePosition - (textMag * textHeight) ;
-
- startTextLength = (textWidth*startStringLength);
-    startTextX = (screenShort - startTextLength ) / 2;
-     startTextY =  menuVerticalShift+ (textHeight);
-     scoreTextLength = (textWidth*scoresStringLength);
- scoreTextX =(screenShort - scoreTextLength ) / 2 ;
-     scoreTextY =  menuVerticalShift+ (3*textHeight) ;
-     settingsTextLength = (textWidth*settingsStringLength);
- settingsTextX =  (screenShort - settingsTextLength ) / 2;
-     settingsTextY =menuVerticalShift+ (5*textHeight) ;
+  startTextLength = (textWidth * strlen("START"));
+  startTextX = (screenShort - startTextLength) / 2;
+  startTextY = menuVerticalShift + (textHeight);
+  scoreTextLength = (textWidth * strlen("SCORES"));
+  scoreTextX = (screenShort - scoreTextLength) / 2;
+  scoreTextY = menuVerticalShift + (3 * textHeight);
+  settingsTextLength = (textWidth * strlen("SETTINGS"));
+  settingsTextX = (screenShort - settingsTextLength) / 2;
+  settingsTextY = menuVerticalShift + (5 * textHeight);
 
 
-  
-TFTscreen.setTextSize(textMultiplier);
+  scoreTrueTextLength = (textWidth * strlen("TRUE"));
+  scoreTrueTextX = (screenShort - scoreTrueTextLength) / 2;
 
-  if (!SD.exists("scores.txt")) {
-     TFTscreen.background(Red);
-  TFTscreen.stroke(White);
-  TFTscreen.text("SCORES FILE BROKEN :(",0,0);
-  } 
- 
+    scoreBestTextLength = (textWidth * strlen("PERSONAL BEST"));
+  scoreBestTextX = (screenShort - scoreBestTextLength) / 2;
+
+
+  sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
+  sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
+  sideBoxHorizontal = ((screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnitHorizontal) / 2) - lineDrawBuffer;
+  holdBoxVertical = verticalPlayFieldStart + multiplier;
+
+  nextUpVertical = holdBoxVertical + sideBoxUnitVertical + (2 * multiplier);
+  scoreTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (2.5 * multiplier);
+  levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * multiplier);
+
+  TFTscreen.setTextSize(textMultiplier);
+  // SD.remove("scores.txt");
+scoreFile = SD.open("scores.txt", FILE_WRITE);
+scoreFile.close();
+  if (!SD.exists("scores.txt"))
+  {
+    TFTscreen.background(Red);
+    TFTscreen.stroke(White);
+    TFTscreen.text("SCORES FILE BROKEN :(", 0, 0);
+    delay(5000);
+  }
 }
 
 void loop()
 {
- enterMenu();
+  enterMenu();
 }
 
-
-void enterMenu(){
-int selected = menuSetup();
-switch(selected){
-  case 0 : 
-  enterGame();
-  break;
-  case 1 :
-  enterScores();
-  break; 
-  case 2 :
-  enterSettings();
-  break;
-  default :
+void enterMenu()
+{
+  int selected = menuSetup();
+  switch (selected)
+  {
+  case 0:
+    enterGame();
+    break;
+  case 1:
+    enterScores();
+    break;
+  case 2:
+    enterSettings();
+    break;
+  default:
     TFTscreen.background(Yellow);
-  TFTscreen.stroke(Black);
-  TFTscreen.text("CRIES IN IMPOSSSIBRU :(",0,0);
-
+    TFTscreen.stroke(Black);
+    TFTscreen.text("CRIES IN IMPOSSSIBRU :(", 0, 0);
+    delay(5000);
+  }
 }
-}
 
-
-void   enterGame(){
-    gameScreenSetup();
+void enterGame()
+{
+  gameScreenSetup();
 
   TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
   gameAlive = true;
@@ -481,13 +470,141 @@ void   enterGame(){
       randomTetriminos[index + 7] = selectorRand[index];
     }
   }
- gameOver();
+  gameOver();
+  delay(1000);
+  enterGameEndedPhase();
+}
+
+char *newPlayer()
+{
+  char *characters[27] = {" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+  int letters[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  int charactSelec = 0;
+  makeSelectionScoreArrows();
+  bool letGoOfA = true;
+  bool letGoOfB = true;
+
+  textNameUnderscore(charactSelec, Green);
+
+  while (true)
+  {
+    downButtonState = digitalRead(DOWN_BUTTON);
+    upButtonState = digitalRead(UP_BUTTON);
+    aButtonState = digitalRead(A_BUTTON);
+    bButtonState = digitalRead(B_BUTTON);
+
+    if (downButtonState == HIGH)
+    {
+      if (letters[charactSelec] == 26)
+      {
+        letters[charactSelec] = 0;
+      }
+      else
+      {
+        int newInt = letters[charactSelec] + 1;
+        letters[charactSelec] = newInt;
+      }
+
+      changeSelectionScoreName(charactSelec, characters[letters[charactSelec]], Green);
+      changeSelectionScoreArrows(charactSelec, false, Green);
+    }
+    if (upButtonState == HIGH)
+    {
+      if (letters[charactSelec] == 0)
+      {
+        letters[charactSelec] = 26;
+      }
+      else
+      {
+        int newInt = letters[charactSelec] - 1;
+        letters[charactSelec] = newInt;
+      }
+
+      changeSelectionScoreName(charactSelec, characters[letters[charactSelec]], Green);
+      changeSelectionScoreArrows(charactSelec, true, Green);
+    }
+    if (upButtonState == LOW)
+    {
+      changeSelectionScoreArrows(charactSelec, true, White);
+    }
+    if (downButtonState == HIGH)
+    {
+      changeSelectionScoreArrows(charactSelec, false, White);
+    }
+
+    if (aButtonState == HIGH && letGoOfA)
+    {
+      letGoOfA = false;
+      changeSelectionScoreName(charactSelec, characters[letters[charactSelec]], White);
+      textNameUnderscore(charactSelec, Black);
+      if (charactSelec == 7)
+      {
+        break;
+      }
+      else
+      {
+        charactSelec++;
+        textNameUnderscore(charactSelec, Green);
+      }
+    }
+
+    if (bButtonState == HIGH && letGoOfB)
+    {
+      letGoOfB = false;
+
+      if (charactSelec != 0)
+      {
+        textNameUnderscore(charactSelec, Black);
+        changeSelectionScoreName(charactSelec, characters[letters[charactSelec]], White);
+        charactSelec--;
+        textNameUnderscore(charactSelec, Green);
+      }
+    }
+    if (aButtonState == LOW)
+    {
+      letGoOfA = true;
+    }
+    if (bButtonState == LOW)
+    {
+      letGoOfB = true;
+    }
+
+    delay(75);
+  }
+  TFTscreen.background(Red);
   delay(1000);
 
-  
-  
-  // Here, what I want to do is, I want to access the database of saved people and their scores. 
+  char *name;
+  name = (char *)malloc(9);
+  for (int i = 0; i < 8; i++)
+  {
+    name[i] = *characters[letters[i]];
+    SerialUSB.print(name[i]);
+  }
+  SerialUSB.println("!");
+  name[8] = '\0';
+
+  SerialUSB.print("Returning name ");
+  SerialUSB.print(name);
+  SerialUSB.println("!");
+  return name;
+}
+
+void enterGameEndedPhase()
+{
+
+  // Here, what I want to do is, I want to access the database of saved people and their scores.
   //Step one, select player or create new player.
+
+  TFTscreen.background(Black);
+  char *name = newPlayer();
+  SerialUSB.print("Player name ");
+  SerialUSB.print(name);
+
+  SerialUSB.print(" got ");
+SerialUSB.println(score);
+ 
+
   // If select player, display the names with arrow keys, A selects the name, B goes back to the previous screen.
   // Once selected, display their highscore and current score.
   // If the current score beats the high score, some kind of congrats and then overwrite the previous.
@@ -501,157 +618,438 @@ void   enterGame(){
   // Some kind of ordering will have to happen here with the highscores (with the current person highlighted or in a different colour (green?)).
 
   // I should save them in order so that the highscore accessed from the menu is just a matter of reading the text file and displaying.
-  // Clicking next displays a prophecy: 
+  // Clicking next displays a prophecy:
   // no one has yet to beat the mighty [name]
 
-    scoreFile = SD.open("scores.txt");
-  while (scoreFile.available()) {
-SerialUSB.write(scoreFile.read());
-  }
-  scoreFile.close();
+// SerialUSB.println("checking file...");
+ int scoreLinesCounting=0;
+String restOfFile;
   
+    SerialUSB.println("Let's see where we stand!");
+
+      scoreFile = SD.open("scores.txt");
+ 
+  while (scoreFile.available())
+  {
+SerialUSB.println("reading line...");
+String string = scoreFile.readStringUntil(',');
+SerialUSB.println(string);
+int scoreLineLength = string.length();
+SerialUSB.println("reading name...");
+char *nameInBoard;
+  nameInBoard = (char *)malloc(9);
+  for (int i = 0; i < 8; i++)
+  {
+    nameInBoard[i] = string[i];
+    SerialUSB.print(string[i]);
+  }
+  SerialUSB.print(".");
+  SerialUSB.println();
+  nameInBoard[8] = '\0';
+
+SerialUSB.println("reading score...");
+int actualIntScore = 0;
+
+  for (int i = 0; i < scoreLineLength-8; i++)
+  {
+    int tenthPow = 1;
+    for ( int j = 1 ; j < (scoreLineLength-8 - i) ; j ++){
+tenthPow = tenthPow * 10;
+    }
+
+actualIntScore = actualIntScore + (tenthPow * (string[i+8]-'0'));
+SerialUSB.print(string[i+8]);
+  }
+
+SerialUSB.println();
+
+  SerialUSB.print(nameInBoard);
+  SerialUSB.print(" got a score of ");
+  SerialUSB.println(actualIntScore);
+
+
+  SerialUSB.print("I got a score of ");
+  SerialUSB.println(score);
+
+  if ( score <= actualIntScore){
+scoreLinesCounting = 
+scoreLinesCounting + scoreLineLength + 1;
+  } else{
+     restOfFile = string + ','
+    + scoreFile.readString();
+
+    SerialUSB.println("the rest of the file: ");
+    SerialUSB.println(restOfFile);
+    break;
+  }
+
+
+free(nameInBoard);
+
+  }
+
+  
+   scoreFile.close();
+  //  SerialUSB.println("appending to file...");
+    scoreFile = SD.open("scores.txt", FILE_WRITE);
+ scoreFile.seek(scoreLinesCounting);
+  scoreFile.print(name);
+  scoreFile.print(score);
+  scoreFile.print(",");
+  scoreFile.print(restOfFile);
+  scoreFile.close(); 
+  
+    SerialUSB.println("done!");
+
+
+
+  free(name);
+  SerialUSB.println();
 }
-  void  enterScores(){
-    
-    TFTscreen.background(Yellow);
-  TFTscreen.stroke(Black);
-  TFTscreen.text("UNDER CONSTRUCTION :(",0,0);
 
-    while (true){
-  bButtonState = digitalRead(B_BUTTON);
+void changeSelectionScoreName(int letterNum, char *character, uint16_t colour)
+{
 
-  if (bButtonState == HIGH)
+  int textX = (0.5 * screenShort) - 32 + (letterNum * textWidth);
+
+  TFTscreen.fillRect(textX, scoreTextY, textWidth, textHeight, Black);
+
+  TFTscreen.stroke(colour);
+
+  TFTscreen.text(character, textX, scoreTextY);
+}
+
+void makeSelectionScoreArrows()
+{
+  for (int i = 0; i < 8; i++)
   {
-    break;
+    changeSelectionScoreArrows(i, true, White);
+    changeSelectionScoreArrows(i, false, White);
   }
+}
+void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour)
+{
 
-  }
-  }
-   void enterSettings(){
-      
-    TFTscreen.background(Yellow);
-  TFTscreen.stroke(Black);
-  TFTscreen.text("UNDER CONSTRUCTION :(",0,0);
+  int textX = (0.5 * screenShort) - 32 + (letterNum * textWidth);
 
-      while (true){
-  bButtonState = digitalRead(B_BUTTON);
-
-  if (bButtonState == HIGH)
+  TFTscreen.stroke(colour);
+  if (up)
   {
-    break;
+
+    for (int i = 0; i < 5; i++)
+    {
+
+      TFTscreen.point(textX + i, scoreTextY - textHeight + abs(i - 2));
+    }
   }
-   }
-   }
+  else
+  {
+    for (int i = 0; i < 5; i++)
+    {
 
+      TFTscreen.point(textX + i, scoreTextY + (2 * textHeight) - abs(i - 2));
+    }
+  }
+}
 
+void textNameUnderscore(int letterNum, uint16_t colour)
+{
 
-int menuSetup(){
+  int textX = (0.5 * screenShort) - 32 + (letterNum * textWidth);
+
+  TFTscreen.drawRect(textX, scoreTextY + textHeight, textWidth, 2, colour);
+}
+
+void enterScores()
+{
+
   TFTscreen.background(Black);
   TFTscreen.stroke(White);
 
-TFTscreen.setTextSize(textMag * textMultiplier );
-size_t jetrisStringLength = strlen("JETRIS");
 
 
+int selected  = scoreTypeSelection();
 
-  TFTscreen.text("JETRIS", (screenShort - (textMag*textWidth*jetrisStringLength) ) / 2, menuVerticalShift - (textMag*textHeight));
+    switch (selected)
+  {
+  case 0:
+    // enterTrue();
+        TFTscreen.background(Yellow);
+    TFTscreen.stroke(Black);
+    TFTscreen.text("TRUE", 0, 0);
+    delay(2000);
+    break;
+  case 1:
+    // enterPersonalBest();
+            TFTscreen.background(Yellow);
+    TFTscreen.stroke(Black);
+    TFTscreen.text("PERSONAL BEST", 0, 0);
+    delay(2000);
+    break;
+  default:
+    TFTscreen.background(Yellow);
+    TFTscreen.stroke(Black);
+    TFTscreen.text("CRIES IN IMPOSSSIBRU :(", 0, 0);
+    delay(5000);
+  }
+
+
+  // TFTscreen.text("UNDER CONSTRUCTION :(", 0, 0);
+
+  while (true)
+  {
+    bButtonState = digitalRead(B_BUTTON);
+
+    if (bButtonState == HIGH)
+    {
+      return;
+    }
+  }
+}
+
+
+int scoreTypeSelection(){
+
+  TFTscreen.setTextSize(2 * textMultiplier);
+  size_t scoreModeStringLength = strlen("SCORE MODE");
+
+  TFTscreen.text("SCORE MODE", (screenShort - (2 * textWidth * scoreModeStringLength)) / 2, menuVerticalShift - (2 * textHeight));
   TFTscreen.setTextSize(textMultiplier);
 
-boolean letGoOfUp = true;
-boolean letGoOfDown= true;
-  
+   bool letGoOfUp = true;
+  bool letGoOfDown = true;
 
-   int selected = 0;
-   changeSelectionStartMenu(selected);
+  int selected = 0;
+  changeSelectionScoreMenu(selected);
 
-  while (true){
-  downButtonState = digitalRead(DOWN_BUTTON);
-  upButtonState = digitalRead(UP_BUTTON);
-  aButtonState = digitalRead(A_BUTTON);
-
-  if (downButtonState == HIGH && letGoOfDown )
+  while (true)
   {
-    if ( selected < 2){
-      selected ++;
-      changeSelectionStartMenu(selected);
+    downButtonState = digitalRead(DOWN_BUTTON);
+    upButtonState = digitalRead(UP_BUTTON);
+    aButtonState = digitalRead(A_BUTTON);
+
+    if (downButtonState == HIGH && letGoOfDown)
+    {
+      if (selected < 1)
+      {
+        selected++;
+        changeSelectionScoreMenu(selected);
+      }
+      letGoOfDown = false;
     }
-     letGoOfDown = false;
-  }
-  if (upButtonState == HIGH && letGoOfUp )
-  {
-        if ( selected > 0){
-      selected --;
-      changeSelectionStartMenu(selected);
+    if (upButtonState == HIGH && letGoOfUp)
+    {
+      if (selected > 0)
+      {
+        selected--;
+        changeSelectionScoreMenu(selected);
+      }
+      letGoOfUp = false;
     }
-    letGoOfUp = false;
-  }
 
-  if (aButtonState == HIGH )
-  {
-    return selected;
-  }
-  if (upButtonState == LOW )
-  {
-    letGoOfUp = true;
-  }
-  
-  if (downButtonState == LOW)
-  {
-    letGoOfDown = true;
-  }
+    if (aButtonState == HIGH)
+    {
+      return selected;
+    }
+    if (upButtonState == LOW)
+    {
+      letGoOfUp = true;
+    }
 
-  delay (50);
+    if (downButtonState == LOW)
+    {
+      letGoOfDown = true;
+    }
+
+    delay(50);
   }
-
-
-
 }
 
-void changeSelectionStartMenu(int selection){
-boolean select[3] =  {false,false,false};
-select[selection] = true;
+void changeSelectionScoreMenu(int selection){
+  
+  switch (selection)
+  {
+  case 0:
+TFTscreen.stroke(Green);
 
-if(select[0]){
-  TFTscreen.stroke(Green);
-   TFTscreen.text("START", startTextX, startTextY);
-   TFTscreen.drawRect( startTextX, startTextY +textHeight, startTextLength, 1, Green);
-}else{
+    TFTscreen.text("TRUE", scoreTrueTextX, startTextY);
+
+    TFTscreen.drawRect(scoreTrueTextX, startTextY + textHeight, scoreTrueTextLength, 1, Green);
+
+    TFTscreen.stroke(White);
+
+    TFTscreen.text("PERSONAL BEST", scoreBestTextX, scoreTextY);
+
+    TFTscreen.drawRect(scoreBestTextX, scoreTextY + textHeight, scoreBestTextLength, 1, Black);
+
+    break;
+  case 1:
+    TFTscreen.stroke(Green);
+
+    TFTscreen.text("PERSONAL BEST", scoreBestTextX, scoreTextY);
+
+    TFTscreen.drawRect(scoreBestTextX, scoreTextY + textHeight, scoreBestTextLength, 1, Green);
+     TFTscreen.stroke(White);
+
+    TFTscreen.text("TRUE", scoreTrueTextX, startTextY);
+
+    TFTscreen.drawRect(scoreTrueTextX, startTextY + textHeight, scoreTrueTextLength, 1, Black);
+
+    break;
+ 
+  default:
+    TFTscreen.background(Red);
+    TFTscreen.stroke(White);
+    TFTscreen.text("OT OH :(", 0, 0);
+    delay(5000);
+    break;
+  }
+}
+
+
+void enterSettings()
+{
+
+  TFTscreen.background(Yellow);
+  TFTscreen.stroke(Black);
+  TFTscreen.text("UNDER CONSTRUCTION :(", 0, 0);
+
+  while (true)
+  {
+    bButtonState = digitalRead(B_BUTTON);
+
+    if (bButtonState == HIGH)
+    {
+      return;
+    }
+  }
+}
+
+int menuSetup()
+{
+  TFTscreen.background(Black);
   TFTscreen.stroke(White);
-   TFTscreen.text("START", startTextX,startTextY);
-   TFTscreen.drawRect( startTextX, startTextY + textHeight,  startTextLength, 1, Black);
+
+  TFTscreen.setTextSize(2 * textMultiplier);
+  size_t jetrisStringLength = strlen("JETRIS");
+
+  TFTscreen.text("JETRIS", (screenShort - (2 * textWidth * jetrisStringLength)) / 2, menuVerticalShift - (2 * textHeight));
+  TFTscreen.setTextSize(textMultiplier);
+
+  bool letGoOfUp = true;
+  bool letGoOfDown = true;
+
+  int selected = 0;
+  changeSelectionStartMenu(selected);
+
+  while (true)
+  {
+    downButtonState = digitalRead(DOWN_BUTTON);
+    upButtonState = digitalRead(UP_BUTTON);
+    aButtonState = digitalRead(A_BUTTON);
+
+    if (downButtonState == HIGH && letGoOfDown)
+    {
+      if (selected < 2)
+      {
+        selected++;
+        changeSelectionStartMenu(selected);
+      }
+      letGoOfDown = false;
+    }
+    if (upButtonState == HIGH && letGoOfUp)
+    {
+      if (selected > 0)
+      {
+        selected--;
+        changeSelectionStartMenu(selected);
+      }
+      letGoOfUp = false;
+    }
+
+    if (aButtonState == HIGH)
+    {
+      return selected;
+    }
+    if (upButtonState == LOW)
+    {
+      letGoOfUp = true;
+    }
+
+    if (downButtonState == LOW)
+    {
+      letGoOfDown = true;
+    }
+
+    delay(50);
+  }
 }
-if(select[1]){
-       TFTscreen.stroke(Green);
-  
-   TFTscreen.text("SCORES", scoreTextX,scoreTextY);
-  
-      TFTscreen.drawRect( scoreTextX,scoreTextY + textHeight,  scoreTextLength, 1, Green);
-}else{
-       TFTscreen.stroke(White);
-    
-   TFTscreen.text("SCORES", scoreTextX,scoreTextY);
-   
-      TFTscreen.drawRect( scoreTextX,scoreTextY+ textHeight,  scoreTextLength, 1, Black);
 
+void changeSelectionStartMenu(int selection)
+{
+
+  switch (selection)
+  {
+  case 0:
+    TFTscreen.stroke(Green);
+    TFTscreen.text("START", startTextX, startTextY);
+    TFTscreen.drawRect(startTextX, startTextY + textHeight, startTextLength, 1, Green);
+
+    TFTscreen.stroke(White);
+
+    TFTscreen.text("SCORES", scoreTextX, scoreTextY);
+
+    TFTscreen.drawRect(scoreTextX, scoreTextY + textHeight, scoreTextLength, 1, Black);
+
+    TFTscreen.stroke(White);
+    TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
+    TFTscreen.drawRect(settingsTextX, settingsTextY + textHeight, settingsTextLength, 1, Black);
+
+    break;
+  case 1:
+    TFTscreen.stroke(Green);
+
+    TFTscreen.text("SCORES", scoreTextX, scoreTextY);
+
+    TFTscreen.drawRect(scoreTextX, scoreTextY + textHeight, scoreTextLength, 1, Green);
+
+    TFTscreen.stroke(White);
+    TFTscreen.text("START", startTextX, startTextY);
+    TFTscreen.drawRect(startTextX, startTextY + textHeight, startTextLength, 1, Black);
+
+    TFTscreen.stroke(White);
+    TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
+    TFTscreen.drawRect(settingsTextX, settingsTextY + textHeight, settingsTextLength, 1, Black);
+
+    break;
+  case 2:
+    TFTscreen.stroke(Green);
+
+    TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
+    TFTscreen.drawRect(settingsTextX, settingsTextY + textHeight, settingsTextLength, 1, Green);
+
+    TFTscreen.stroke(White);
+    TFTscreen.text("START", startTextX, startTextY);
+    TFTscreen.drawRect(startTextX, startTextY + textHeight, startTextLength, 1, Black);
+
+    TFTscreen.stroke(White);
+
+    TFTscreen.text("SCORES", scoreTextX, scoreTextY);
+
+    TFTscreen.drawRect(scoreTextX, scoreTextY + textHeight, scoreTextLength, 1, Black);
+    break;
+  default:
+    TFTscreen.background(Red);
+    TFTscreen.stroke(White);
+    TFTscreen.text("OT OH :(", 0, 0);
+    delay(5000);
+    break;
+  }
 }
 
-if(select[2] ){
-  TFTscreen.stroke(Green);
-      
-   TFTscreen.text("SETTINGS", settingsTextX,settingsTextY);
-   TFTscreen.drawRect( settingsTextX, settingsTextY+ textHeight,  settingsTextLength, 1, Green);
-
-}else{
-
-TFTscreen.stroke(White);
-  TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
-  TFTscreen.drawRect( settingsTextX, settingsTextY + textHeight,  settingsTextLength, 1, Black);
-}
-
-}
-
-void gameScreenSetup(){
-   // clear the screen with a black background
+void gameScreenSetup()
+{
+  // clear the screen with a black background
   TFTscreen.background(Black);
   TFTscreen.stroke(White);
   //screen.rect(xStart, yStart, width, height);
@@ -661,30 +1059,23 @@ void gameScreenSetup(){
   //height : int, the height of the rectangle
   TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayFieldContainer, heightPlayFieldContainer);
   TFTscreen.setTextSize(textMultiplier);
-  sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
-  sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
-  sideBoxHorizontal = ((screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnitHorizontal) / 2) - lineDrawBuffer;
-  holdBoxVertical = verticalPlayFieldStart + multiplier;
+
   TFTscreen.rect(sideBoxHorizontal, holdBoxVertical, sideBoxUnitHorizontal, sideBoxUnitVertical);
   TFTscreen.text("HOLD", sideBoxHorizontal, verticalPlayFieldStart);
 
-  nextUpVertical = holdBoxVertical + sideBoxUnitVertical + (2 * multiplier);
   TFTscreen.text("NEXT", sideBoxHorizontal, holdBoxVertical + sideBoxUnitVertical + multiplier);
   TFTscreen.rect(sideBoxHorizontal, nextUpVertical, sideBoxUnitHorizontal, 2 * sideBoxUnitVertical);
 
-  scoreTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (2.5 * multiplier);
-
   TFTscreen.text("SCORE", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + multiplier);
   TFTscreen.text("0", sideBoxHorizontal, scoreTextVertical);
-
-  levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * multiplier);
 
   TFTscreen.text("LEVEL", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + (4.5 * multiplier));
   TFTscreen.text("1", sideBoxHorizontal, levelTextVertical);
 }
 
-void gameOver(){
-    TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
+void gameOver()
+{
+  TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
   TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
   TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
   TFTscreen.stroke(White);
@@ -747,7 +1138,7 @@ void checkForClearLine()
 {
   lineMultiplier = 0;
 
-  boolean needsReDoing = false;
+  bool needsReDoing = false;
   for (int m = 0; m < tetrisGridRowsIncInvis; m++)
   {
     for (int n = 0; n < tetrisGridCols; n++)
@@ -876,22 +1267,6 @@ void spawnTetrimino(Tetrimino tetrimino)
   }
 }
 
-void placeTetriminoInHold(Tetrimino tetrimino)
-{
-
-  // make the loop in the loop() function take on the previously allocated hold block and place the current one into hold.
-  if (!emptyHold)
-  {
-    // Take out the hold Tetrimino and spawn it
-  }
-  else
-  {
-    // We need the next tetrimino...
-  }
-
-  // save the current in hold, make in play false.
-}
-
 void commitToPlayGrid(Tetrimino tetrimino)
 {
 
@@ -966,7 +1341,7 @@ void moveTetrimino(Tetrimino tetrimino)
     //TODO - implement legit faster fall rules
     tryToMoveDown(tetrimino, true);
   }
-  if (upButtonState == HIGH && letGoOfHardDrop&& gameAlive)
+  if (upButtonState == HIGH && letGoOfHardDrop && gameAlive)
   {
     hardDrop(tetrimino);
   }
@@ -980,11 +1355,11 @@ void moveTetrimino(Tetrimino tetrimino)
     tryToMoveRight(tetrimino);
   }
 
-  if (aButtonState == HIGH && holdAvailable&& gameAlive)
+  if (aButtonState == HIGH && holdAvailable && gameAlive)
   {
     tetriminoInPlay = false;
   }
-  if (bButtonState == HIGH && letGoOfRotate&& gameAlive)
+  if (bButtonState == HIGH && letGoOfRotate && gameAlive)
   {
 
     letGoOfRotate = false;
@@ -1047,7 +1422,7 @@ void spawnGhost(Tetrimino tetrimino)
   ghostColour(tetrimino);
 }
 
-void tryToMoveDown(Tetrimino tetrimino, boolean incrementScore)
+void tryToMoveDown(Tetrimino tetrimino, bool incrementScore)
 {
   //if the block settles above the visable line, end the game.
 
@@ -1124,7 +1499,7 @@ void tryToMoveLeft(Tetrimino tetrimino)
   }
 }
 
-boolean hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition)
+bool hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition)
 {
   if (hypotheticalVerticalDotPosition + (tetrimino.blocksDown() * multiplier) > linePosVerticalMaxDown)
   {
@@ -1133,7 +1508,7 @@ boolean hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition)
   return false;
 }
 
-boolean overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPosition, int hypotheticalVerticalDotPosition)
+bool overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPosition, int hypotheticalVerticalDotPosition)
 {
   for (int n = 0; n < tetrimino.cols; n++)
   {
@@ -1218,17 +1593,17 @@ void createNewColouredPoints(Tetrimino tetrimino)
   fillInNewGrid(tetrimino, true, tetrimino.colour);
 }
 
-void fillInNewGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour)
+void fillInNewGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour)
 {
   fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, trueOrFalse, strokeColour);
 }
 
-void fillInOldGrid(Tetrimino tetrimino, boolean trueOrFalse, uint16_t strokeColour)
+void fillInOldGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour)
 {
   fillInGrid(tetrimino, previousHorizontalDotPosition, previousVerticalDotPosition, trueOrFalse, strokeColour);
 }
 
-void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, boolean trueOrFalse, uint16_t colour)
+void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour)
 {
   if (startHorizontalDotPosition > linePosHorizontalMaxRight)
   {
@@ -1246,7 +1621,7 @@ void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVe
     for (int n = 0; n < tetrimino.cols; n++)
     {
 
-      boolean conditionalBoolean;
+      bool conditionalBoolean;
       if (startHorizontalDotPosition > linePosHorizontalMaxRight)
       {
         conditionalBoolean = tetrimino.booleanOfStartGrid(m, n);
