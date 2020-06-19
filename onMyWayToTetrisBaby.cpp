@@ -1,4 +1,7 @@
 
+
+//note to self: the scores still seem to be going funny- the commas aren't quite consistent.
+
 #include <SD.h>
 #include <TFT.h> // Arduino LCD library
 #include <SPI.h>
@@ -73,13 +76,11 @@ int settingsTextLength;
 int settingsTextX;
 int settingsTextY;
 
-
 int scoreTrueTextLength;
 int scoreTrueTextX;
 int scoreBestTextLength;
 int scoreBestTextX;
 int scoreBestTextY;
-
 
 const int lineDrawBuffer = 1;
 const int numInvisableRows = 2;
@@ -160,10 +161,6 @@ void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVe
 
 void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour);
 
-void fillInOldGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour);
-void fillInNewGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour);
-void createNewColouredPoints(Tetrimino tetrimino);
-void erasePreviousColouredPoints(Tetrimino tetrimino);
 void moveScreenTetrimino(Tetrimino tetrimino);
 void rotateScreenTetrimino(Tetrimino tetrimino);
 void movedDown(Tetrimino tetrimino);
@@ -205,6 +202,7 @@ void updateScore();
 void updateLevel();
 void changeSelectionStartMenu(int selection);
 void changeSelectionScoreMenu(int selection);
+void enterTrue();
 bool emptyHold;
 bool holdAvailable;
 int selectorRand[7];
@@ -223,8 +221,6 @@ void setup()
   SerialUSB.begin();
   TFTscreen.begin();
   TFTscreen.setRotation(0);
-
-  delay(2000);
 
   SD.begin(SD_CS, SD_MOSI, SD_MISO, SD_SCK);
 
@@ -353,13 +349,11 @@ void setup()
   settingsTextX = (screenShort - settingsTextLength) / 2;
   settingsTextY = menuVerticalShift + (5 * textHeight);
 
-
   scoreTrueTextLength = (textWidth * strlen("TRUE"));
   scoreTrueTextX = (screenShort - scoreTrueTextLength) / 2;
 
-    scoreBestTextLength = (textWidth * strlen("PERSONAL BEST"));
+  scoreBestTextLength = (textWidth * strlen("PERSONAL BEST"));
   scoreBestTextX = (screenShort - scoreBestTextLength) / 2;
-
 
   sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
   sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
@@ -372,14 +366,16 @@ void setup()
 
   TFTscreen.setTextSize(textMultiplier);
   // SD.remove("scores.txt");
-scoreFile = SD.open("scores.txt", FILE_WRITE);
-scoreFile.close();
+  scoreFile = SD.open("scores.txt", FILE_WRITE);
+  scoreFile.close();
   if (!SD.exists("scores.txt"))
   {
     TFTscreen.background(Red);
     TFTscreen.stroke(White);
     TFTscreen.text("SCORES FILE BROKEN :(", 0, 0);
-    delay(5000);
+    while(true){
+
+    }
   }
 }
 
@@ -602,8 +598,7 @@ void enterGameEndedPhase()
   SerialUSB.print(name);
 
   SerialUSB.print(" got ");
-SerialUSB.println(score);
- 
+  SerialUSB.println(score);
 
   // If select player, display the names with arrow keys, A selects the name, B goes back to the previous screen.
   // Once selected, display their highscore and current score.
@@ -621,87 +616,82 @@ SerialUSB.println(score);
   // Clicking next displays a prophecy:
   // no one has yet to beat the mighty [name]
 
-// SerialUSB.println("checking file...");
- int scoreLinesCounting=0;
-String restOfFile;
-  
-    SerialUSB.println("Let's see where we stand!");
+  // SerialUSB.println("checking file...");
+  int scoreLinesCounting = 0;
+  String restOfFile = "";
 
-      scoreFile = SD.open("scores.txt");
- 
+  scoreFile = SD.open("scores.txt");
+
   while (scoreFile.available())
   {
-SerialUSB.println("reading line...");
-String string = scoreFile.readStringUntil(',');
-SerialUSB.println(string);
-int scoreLineLength = string.length();
-SerialUSB.println("reading name...");
-char *nameInBoard;
-  nameInBoard = (char *)malloc(9);
-  for (int i = 0; i < 8; i++)
-  {
-    nameInBoard[i] = string[i];
-    SerialUSB.print(string[i]);
-  }
-  SerialUSB.print(".");
-  SerialUSB.println();
-  nameInBoard[8] = '\0';
+    SerialUSB.println("reading line...");
+    String string = scoreFile.readStringUntil(',');
+    SerialUSB.println(string);
+    int scoreLineLength = string.length();
+    SerialUSB.println("reading name...");
+    char *nameInBoard;
+    nameInBoard = (char *)malloc(9);
+    for (int i = 0; i < 8; i++)
+    {
+      nameInBoard[i] = string[i];
+      SerialUSB.print(string[i]);
+    }
+    SerialUSB.print(".");
+    SerialUSB.println();
+    nameInBoard[8] = '\0';
 
-SerialUSB.println("reading score...");
-int actualIntScore = 0;
+    SerialUSB.println("reading score...");
+    int actualIntScore = 0;
 
-  for (int i = 0; i < scoreLineLength-8; i++)
-  {
-    int tenthPow = 1;
-    for ( int j = 1 ; j < (scoreLineLength-8 - i) ; j ++){
-tenthPow = tenthPow * 10;
+    for (int i = 0; i < scoreLineLength - 8; i++)
+    {
+      int tenthPow = 1;
+      for (int j = 1; j < (scoreLineLength - 8 - i); j++)
+      {
+        tenthPow = tenthPow * 10;
+      }
+
+      actualIntScore = actualIntScore + (tenthPow * (string[i + 8] - '0'));
+      SerialUSB.print(string[i + 8]);
     }
 
-actualIntScore = actualIntScore + (tenthPow * (string[i+8]-'0'));
-SerialUSB.print(string[i+8]);
+    SerialUSB.println();
+
+    SerialUSB.print(nameInBoard);
+    SerialUSB.print(" got a score of ");
+    SerialUSB.println(actualIntScore);
+
+    SerialUSB.print("I got a score of ");
+    SerialUSB.println(score);
+
+    if (score <= actualIntScore)
+    {
+      scoreLinesCounting =
+          scoreLinesCounting + scoreLineLength + 1;
+    }
+    else
+    {
+      restOfFile = string + ',' + scoreFile.readString();
+
+      SerialUSB.println("the rest of the file: ");
+      SerialUSB.println(restOfFile);
+      break;
+    }
+
+    free(nameInBoard);
   }
 
-SerialUSB.println();
-
-  SerialUSB.print(nameInBoard);
-  SerialUSB.print(" got a score of ");
-  SerialUSB.println(actualIntScore);
-
-
-  SerialUSB.print("I got a score of ");
-  SerialUSB.println(score);
-
-  if ( score <= actualIntScore){
-scoreLinesCounting = 
-scoreLinesCounting + scoreLineLength + 1;
-  } else{
-     restOfFile = string + ','
-    + scoreFile.readString();
-
-    SerialUSB.println("the rest of the file: ");
-    SerialUSB.println(restOfFile);
-    break;
-  }
-
-
-free(nameInBoard);
-
-  }
-
-  
-   scoreFile.close();
-  //  SerialUSB.println("appending to file...");
-    scoreFile = SD.open("scores.txt", FILE_WRITE);
- scoreFile.seek(scoreLinesCounting);
+  scoreFile.close();
+   SerialUSB.println("appending to file...");
+  scoreFile = SD.open("scores.txt", FILE_WRITE);
+  scoreFile.seek(scoreLinesCounting);
   scoreFile.print(name);
   scoreFile.print(score);
   scoreFile.print(",");
   scoreFile.print(restOfFile);
-  scoreFile.close(); 
-  
-    SerialUSB.println("done!");
+  scoreFile.close();
 
-
+  SerialUSB.println("done!");
 
   free(name);
   SerialUSB.println();
@@ -710,7 +700,7 @@ free(nameInBoard);
 void changeSelectionScoreName(int letterNum, char *character, uint16_t colour)
 {
 
-  int textX = (0.5 * screenShort) - 32 + (letterNum * textWidth);
+  int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
 
   TFTscreen.fillRect(textX, scoreTextY, textWidth, textHeight, Black);
 
@@ -727,10 +717,11 @@ void makeSelectionScoreArrows()
     changeSelectionScoreArrows(i, false, White);
   }
 }
+
 void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour)
 {
 
-  int textX = (0.5 * screenShort) - 32 + (letterNum * textWidth);
+  int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
 
   TFTscreen.stroke(colour);
   if (up)
@@ -753,35 +744,75 @@ void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour)
 }
 
 void textNameUnderscore(int letterNum, uint16_t colour)
+
+
+
 {
 
-  int textX = (0.5 * screenShort) - 32 + (letterNum * textWidth);
+  int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
 
   TFTscreen.drawRect(textX, scoreTextY + textHeight, textWidth, 2, colour);
 }
 
+
+void enterTrue(){
+  scoreFile = SD.open("scores.txt");
+TFTscreen.background(Black);
+TFTscreen.stroke(White);
+
+int textY = 5;
+
+  while (scoreFile.available())
+  {
+    
+    String string = scoreFile.readStringUntil(',');
+
+    int n = string.length(); 
+    char char_array[n + 1]; 
+  
+    // copying the contents of the 
+    // string to char array 
+    strcpy(char_array, string.c_str());
+
+    
+
+        TFTscreen.text(char_array, 5, textY );
+
+    textY = textY + textHeight + 5;
+  }
+
+  scoreFile.close();
+
+}
+
 void enterScores()
 {
-
   TFTscreen.background(Black);
   TFTscreen.stroke(White);
 
+  int selected = scoreTypeSelection();
 
-
-int selected  = scoreTypeSelection();
-
-    switch (selected)
+  switch (selected)
   {
   case 0:
-    // enterTrue();
-        TFTscreen.background(Yellow);
-    TFTscreen.stroke(Black);
-    TFTscreen.text("TRUE", 0, 0);
-    delay(2000);
+    enterTrue();
+      while (true)
+  {
+    bButtonState = digitalRead(B_BUTTON);
+
+    if (bButtonState == HIGH)
+    {
+      return;
+    }
+  }
+    // TFTscreen.background(Yellow);
+    // TFTscreen.stroke(Black);
+    // TFTscreen.text("TRUE", 0, 0);
+    // delay(2000);
     break;
   case 1:
     // enterPersonalBest();
-            TFTscreen.background(Yellow);
+    TFTscreen.background(Yellow);
     TFTscreen.stroke(Black);
     TFTscreen.text("PERSONAL BEST", 0, 0);
     delay(2000);
@@ -792,9 +823,6 @@ int selected  = scoreTypeSelection();
     TFTscreen.text("CRIES IN IMPOSSSIBRU :(", 0, 0);
     delay(5000);
   }
-
-
-  // TFTscreen.text("UNDER CONSTRUCTION :(", 0, 0);
 
   while (true)
   {
@@ -807,8 +835,8 @@ int selected  = scoreTypeSelection();
   }
 }
 
-
-int scoreTypeSelection(){
+int scoreTypeSelection()
+{
 
   TFTscreen.setTextSize(2 * textMultiplier);
   size_t scoreModeStringLength = strlen("SCORE MODE");
@@ -816,7 +844,7 @@ int scoreTypeSelection(){
   TFTscreen.text("SCORE MODE", (screenShort - (2 * textWidth * scoreModeStringLength)) / 2, menuVerticalShift - (2 * textHeight));
   TFTscreen.setTextSize(textMultiplier);
 
-   bool letGoOfUp = true;
+  bool letGoOfUp = true;
   bool letGoOfDown = true;
 
   int selected = 0;
@@ -865,38 +893,32 @@ int scoreTypeSelection(){
   }
 }
 
-void changeSelectionScoreMenu(int selection){
-  
+void changeSelectionScoreMenu(int selection)
+{
+
   switch (selection)
   {
   case 0:
-TFTscreen.stroke(Green);
-
+    TFTscreen.stroke(Green);
     TFTscreen.text("TRUE", scoreTrueTextX, startTextY);
-
     TFTscreen.drawRect(scoreTrueTextX, startTextY + textHeight, scoreTrueTextLength, 1, Green);
 
     TFTscreen.stroke(White);
-
     TFTscreen.text("PERSONAL BEST", scoreBestTextX, scoreTextY);
-
     TFTscreen.drawRect(scoreBestTextX, scoreTextY + textHeight, scoreBestTextLength, 1, Black);
 
     break;
   case 1:
     TFTscreen.stroke(Green);
-
     TFTscreen.text("PERSONAL BEST", scoreBestTextX, scoreTextY);
-
     TFTscreen.drawRect(scoreBestTextX, scoreTextY + textHeight, scoreBestTextLength, 1, Green);
-     TFTscreen.stroke(White);
 
+    TFTscreen.stroke(White);
     TFTscreen.text("TRUE", scoreTrueTextX, startTextY);
-
     TFTscreen.drawRect(scoreTrueTextX, startTextY + textHeight, scoreTrueTextLength, 1, Black);
 
     break;
- 
+
   default:
     TFTscreen.background(Red);
     TFTscreen.stroke(White);
@@ -905,7 +927,6 @@ TFTscreen.stroke(Green);
     break;
   }
 }
-
 
 void enterSettings()
 {
@@ -1287,40 +1308,9 @@ void commitToPlayGrid(Tetrimino tetrimino)
           gameAlive = false;
         }
         playGrid[col + (tetrisGridCols * row)] = tetrimino.colour;
-        //  SerialUSB.print(m);
-        //   SerialUSB.print(" , ");
-        //   SerialUSB.print(n);
-        //   SerialUSB.print(" : ");
-        //   SerialUSB.print(rationalHorizontal);
-        //     SerialUSB.print(" (");
-
-        //   SerialUSB.print(horizontalDotPosition);
-        //       SerialUSB.print(")");
-        //   SerialUSB.print(" , ");
-        //   SerialUSB.print(rationalVertical);
-        //    SerialUSB.print(" > ");
-        //   SerialUSB.println((rationalHorizontal + m) + (tetrisGridCols * (rationalVertical + n)));
       }
     }
   }
-  //  SerialUSB.println("*************************************");
-  // for (int m = 0; m < tetrisGridRowsIncInvis; m++)
-  // {
-  //   for (int n = 0; n < tetrisGridCols; n++)
-  //   {
-
-  //     if (playGrid[n + (tetrisGridCols * m)] != 0)
-  //     {
-  //       SerialUSB.print("o");
-  //     }
-  //     else
-  //     {
-
-  //       SerialUSB.print("-");
-  //     }
-  //   }
-  //   SerialUSB.println();
-  // }
 }
 
 void moveTetrimino(Tetrimino tetrimino)
@@ -1557,8 +1547,8 @@ void movedDown(Tetrimino tetrimino)
 void moveScreenTetrimino(Tetrimino tetrimino)
 {
 
-  erasePreviousColouredPoints(tetrimino);
-  createNewColouredPoints(tetrimino);
+  fillInGrid(tetrimino, previousHorizontalDotPosition, previousVerticalDotPosition, true, Black);
+  fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, tetrimino.colour);
 }
 
 void updateGhostColour(Tetrimino tetrimino)
@@ -1581,26 +1571,6 @@ void rotateScreenTetrimino(Tetrimino tetrimino)
   ghostPositionUpdate(tetrimino);
   ghostColour(tetrimino);
   fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, true, tetrimino.colour);
-}
-
-void erasePreviousColouredPoints(Tetrimino tetrimino)
-{
-  fillInOldGrid(tetrimino, true, Black);
-}
-
-void createNewColouredPoints(Tetrimino tetrimino)
-{
-  fillInNewGrid(tetrimino, true, tetrimino.colour);
-}
-
-void fillInNewGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour)
-{
-  fillInGrid(tetrimino, horizontalDotPosition, verticalDotPosition, trueOrFalse, strokeColour);
-}
-
-void fillInOldGrid(Tetrimino tetrimino, bool trueOrFalse, uint16_t strokeColour)
-{
-  fillInGrid(tetrimino, previousHorizontalDotPosition, previousVerticalDotPosition, trueOrFalse, strokeColour);
 }
 
 void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour)
