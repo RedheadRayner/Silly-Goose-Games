@@ -64,24 +64,6 @@ int speed;
 int textHeight;
 int textWidth;
 
-int menuVerticalShift;
-
-int startTextLength;
-int startTextX;
-int startTextY;
-int scoreTextLength;
-int scoreTextX;
-int scoreTextY;
-int settingsTextLength;
-int settingsTextX;
-int settingsTextY;
-
-int scoreTrueTextLength;
-int scoreTrueTextX;
-int scoreBestTextLength;
-int scoreBestTextX;
-int scoreBestTextY;
-
 const int lineDrawBuffer = 1;
 const int numInvisableRows = 2;
 const int tetrisGridCols = 10;
@@ -202,9 +184,14 @@ void updateScore();
 void updateLevel();
 void changeSelectionStartMenu(int selection);
 void changeSelectionScoreMenu(int selection);
-void enterTrue();
+void waitForB();
+void structuredSelectableText(char *text, int height, bool selected, bool title, bool rightHandPushed);
+void readButtonStates();
+void errorScreen(char *message);
+void scoreBoard(bool trueScore);
 bool emptyHold;
 bool holdAvailable;
+unsigned getNumberOfDigits(unsigned i);
 int selectorRand[7];
 int score;
 
@@ -227,7 +214,7 @@ void setup()
   // PImage parrotImage = TFTscreen.loadImage("PARROT.BMP");
   // TFTscreen.image(parrotImage,0,0);
   //
-  //   delay(5000);
+  // delay(5000);
 
   multiplier = 1;
   while (((float)screenLong / ((float)(tetrisGridRows * (multiplier + 1)))) > 1.0)
@@ -267,65 +254,51 @@ void setup()
   verticalGhostPosition = verticalStartPosition;
   previousVerticalGhostPosition = verticalStartPosition;
 
-  const int oRows = 2;
-  const int oCols = 2;
-  int oArray[oRows * oCols] = {
+  int oArray[4] = {
       1,
       1,
       1,
       1,
   };
 
-  o_tetrimino.initialise(oArray, oRows, oCols, Yellow, multiplier);
+  o_tetrimino.initialise(oArray, 2, Yellow, multiplier);
 
-  const int iRows = 4;
-  const int iCols = 4;
-  int iArray[iRows * iCols] = {0, 0, 0, 0,
-                               1, 1, 1, 1,
-                               0, 0, 0, 0,
-                               0, 0, 0, 0};
+  int iArray[16] = {0, 0, 0, 0,
+                    1, 1, 1, 1,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0};
 
-  i_tetrimino.initialise(iArray, iRows, iCols, Blue, multiplier);
+  i_tetrimino.initialise(iArray, 4, Blue, multiplier);
 
-  const int tRows = 3;
-  const int tCols = 3;
-  int tArray[tRows * tCols] = {0, 1, 0,
-                               1, 1, 1,
-                               0, 0, 0};
+  int tArray[9] = {0, 1, 0,
+                   1, 1, 1,
+                   0, 0, 0};
 
-  t_tetrimino.initialise(tArray, tRows, tCols, Pink, multiplier);
+  t_tetrimino.initialise(tArray, 3, Pink, multiplier);
 
-  const int lRows = 3;
-  const int lCols = 3;
-  int lArray[lRows * lCols] = {0, 0, 1,
-                               1, 1, 1,
-                               0, 0, 0};
+  int lArray[9] = {0, 0, 1,
+                   1, 1, 1,
+                   0, 0, 0};
 
-  l_tetrimino.initialise(lArray, lRows, lCols, Orange, multiplier);
+  l_tetrimino.initialise(lArray, 3, Orange, multiplier);
 
-  const int jRows = 3;
-  const int jCols = 3;
-  int jArray[jRows * jCols] = {1, 0, 0,
-                               1, 1, 1,
-                               0, 0, 0};
+  int jArray[9] = {1, 0, 0,
+                   1, 1, 1,
+                   0, 0, 0};
 
-  j_tetrimino.initialise(jArray, jRows, jCols, DarkBlue, multiplier);
+  j_tetrimino.initialise(jArray, 3, DarkBlue, multiplier);
 
-  const int sRows = 3;
-  const int sCols = 3;
-  int sArray[sRows * sCols] = {0, 1, 1,
-                               1, 1, 0,
-                               0, 0, 0};
+  int sArray[9] = {0, 1, 1,
+                   1, 1, 0,
+                   0, 0, 0};
 
-  s_tetrimino.initialise(sArray, sRows, sCols, Green, multiplier);
+  s_tetrimino.initialise(sArray, 3, Green, multiplier);
 
-  const int zRows = 3;
-  const int zCols = 3;
-  int zArray[zRows * zCols] = {1, 1, 0,
-                               0, 1, 1,
-                               0, 0, 0};
+  int zArray[9] = {1, 1, 0,
+                   0, 1, 1,
+                   0, 0, 0};
 
-  z_tetrimino.initialise(zArray, zRows, zCols, Red, multiplier);
+  z_tetrimino.initialise(zArray, 3, Red, multiplier);
 
   pinMode(DOWN_BUTTON, INPUT);
   pinMode(UP_BUTTON, INPUT);
@@ -336,24 +309,6 @@ void setup()
 
   textHeight = textMultiplier * 8;
   textWidth = textMultiplier * 6;
-
-  menuVerticalShift = verticalDotCentrePosition - (2 * textHeight);
-
-  startTextLength = (textWidth * strlen("START"));
-  startTextX = (screenShort - startTextLength) / 2;
-  startTextY = menuVerticalShift + (textHeight);
-  scoreTextLength = (textWidth * strlen("SCORES"));
-  scoreTextX = (screenShort - scoreTextLength) / 2;
-  scoreTextY = menuVerticalShift + (3 * textHeight);
-  settingsTextLength = (textWidth * strlen("SETTINGS"));
-  settingsTextX = (screenShort - settingsTextLength) / 2;
-  settingsTextY = menuVerticalShift + (5 * textHeight);
-
-  scoreTrueTextLength = (textWidth * strlen("TRUE"));
-  scoreTrueTextX = (screenShort - scoreTrueTextLength) / 2;
-
-  scoreBestTextLength = (textWidth * strlen("PERSONAL BEST"));
-  scoreBestTextX = (screenShort - scoreBestTextLength) / 2;
 
   sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
   sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
@@ -370,18 +325,23 @@ void setup()
   scoreFile.close();
   if (!SD.exists("scores.txt"))
   {
-    TFTscreen.background(Red);
-    TFTscreen.stroke(White);
-    TFTscreen.text("SCORES FILE BROKEN :(", 0, 0);
-    while(true){
-
-    }
+    errorScreen("SCORES FILE BROKEN");
   }
 }
 
 void loop()
 {
   enterMenu();
+}
+
+void readButtonStates()
+{
+  downButtonState = digitalRead(DOWN_BUTTON);
+  upButtonState = digitalRead(UP_BUTTON);
+  leftButtonState = digitalRead(LEFT_BUTTON);
+  rightButtonState = digitalRead(RIGHT_BUTTON);
+  bButtonState = digitalRead(B_BUTTON);
+  aButtonState = digitalRead(A_BUTTON);
 }
 
 void enterMenu()
@@ -399,10 +359,7 @@ void enterMenu()
     enterSettings();
     break;
   default:
-    TFTscreen.background(Yellow);
-    TFTscreen.stroke(Black);
-    TFTscreen.text("CRIES IN IMPOSSSIBRU :(", 0, 0);
-    delay(5000);
+    errorScreen("INVALID INT");
   }
 }
 
@@ -484,10 +441,7 @@ char *newPlayer()
 
   while (true)
   {
-    downButtonState = digitalRead(DOWN_BUTTON);
-    upButtonState = digitalRead(UP_BUTTON);
-    aButtonState = digitalRead(A_BUTTON);
-    bButtonState = digitalRead(B_BUTTON);
+    readButtonStates();
 
     if (downButtonState == HIGH)
     {
@@ -567,8 +521,6 @@ char *newPlayer()
 
     delay(75);
   }
-  TFTscreen.background(Red);
-  delay(1000);
 
   char *name;
   name = (char *)malloc(9);
@@ -594,11 +546,9 @@ void enterGameEndedPhase()
 
   TFTscreen.background(Black);
   char *name = newPlayer();
-  SerialUSB.print("Player name ");
-  SerialUSB.print(name);
-
-  SerialUSB.print(" got ");
-  SerialUSB.println(score);
+  TFTscreen.background(Black);
+  structuredSelectableText("PLEASE", verticalDotCentrePosition - (2 * textHeight), false, true, false);
+  structuredSelectableText("WAIT", verticalDotCentrePosition, false, true, false);
 
   // If select player, display the names with arrow keys, A selects the name, B goes back to the previous screen.
   // Once selected, display their highscore and current score.
@@ -619,16 +569,14 @@ void enterGameEndedPhase()
   // SerialUSB.println("checking file...");
   int scoreLinesCounting = 0;
   String restOfFile = "";
-
+  int place = 1;
   scoreFile = SD.open("scores.txt");
 
-  while (scoreFile.available())
+  while (scoreFile.available() && place < 1001)
   {
-    SerialUSB.println("reading line...");
     String string = scoreFile.readStringUntil(',');
     SerialUSB.println(string);
     int scoreLineLength = string.length();
-    SerialUSB.println("reading name...");
     char *nameInBoard;
     nameInBoard = (char *)malloc(9);
     for (int i = 0; i < 8; i++)
@@ -636,11 +584,8 @@ void enterGameEndedPhase()
       nameInBoard[i] = string[i];
       SerialUSB.print(string[i]);
     }
-    SerialUSB.print(".");
-    SerialUSB.println();
     nameInBoard[8] = '\0';
 
-    SerialUSB.println("reading score...");
     int actualIntScore = 0;
 
     for (int i = 0; i < scoreLineLength - 8; i++)
@@ -655,19 +600,11 @@ void enterGameEndedPhase()
       SerialUSB.print(string[i + 8]);
     }
 
-    SerialUSB.println();
-
-    SerialUSB.print(nameInBoard);
-    SerialUSB.print(" got a score of ");
-    SerialUSB.println(actualIntScore);
-
-    SerialUSB.print("I got a score of ");
-    SerialUSB.println(score);
-
     if (score <= actualIntScore)
     {
       scoreLinesCounting =
           scoreLinesCounting + scoreLineLength + 1;
+      place++;
     }
     else
     {
@@ -682,7 +619,6 @@ void enterGameEndedPhase()
   }
 
   scoreFile.close();
-   SerialUSB.println("appending to file...");
   scoreFile = SD.open("scores.txt", FILE_WRITE);
   scoreFile.seek(scoreLinesCounting);
   scoreFile.print(name);
@@ -690,11 +626,27 @@ void enterGameEndedPhase()
   scoreFile.print(",");
   scoreFile.print(restOfFile);
   scoreFile.close();
+  TFTscreen.background(Black);
 
-  SerialUSB.println("done!");
+  structuredSelectableText("SCORE", verticalDotCentrePosition - (5 * textHeight), false, true, false);
+
+  structuredSelectableText("POSITION", verticalDotCentrePosition - (3 * textHeight), false, true, false);
+
+  char pos[getNumberOfDigits(place)];
+  sprintf(pos, "%i", place);
+  structuredSelectableText(pos, verticalDotCentrePosition, false, true, false);
 
   free(name);
-  SerialUSB.println();
+
+  structuredSelectableText("PRESS B", verticalDotCentrePosition + (5 * textHeight), false, false, false);
+  structuredSelectableText("FOR SCORES", verticalDotCentrePosition + (6 * textHeight), false, false, false);
+  waitForB();
+  scoreBoard(true);
+}
+
+unsigned getNumberOfDigits(unsigned i)
+{
+  return i > 0 ? (int)log10((double)i) + 1 : 1;
 }
 
 void changeSelectionScoreName(int letterNum, char *character, uint16_t colour)
@@ -702,11 +654,11 @@ void changeSelectionScoreName(int letterNum, char *character, uint16_t colour)
 
   int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
 
-  TFTscreen.fillRect(textX, scoreTextY, textWidth, textHeight, Black);
+  TFTscreen.fillRect(textX, verticalDotCentrePosition + textHeight, textWidth, textHeight, Black);
 
   TFTscreen.stroke(colour);
 
-  TFTscreen.text(character, textX, scoreTextY);
+  TFTscreen.text(character, textX, verticalDotCentrePosition + textHeight);
 }
 
 void makeSelectionScoreArrows()
@@ -730,7 +682,7 @@ void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour)
     for (int i = 0; i < 5; i++)
     {
 
-      TFTscreen.point(textX + i, scoreTextY - textHeight + abs(i - 2));
+      TFTscreen.point(textX + i, verticalDotCentrePosition + abs(i - 2));
     }
   }
   else
@@ -738,55 +690,145 @@ void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour)
     for (int i = 0; i < 5; i++)
     {
 
-      TFTscreen.point(textX + i, scoreTextY + (2 * textHeight) - abs(i - 2));
+      TFTscreen.point(textX + i, verticalDotCentrePosition + (3 * textHeight) - abs(i - 2));
     }
   }
 }
 
 void textNameUnderscore(int letterNum, uint16_t colour)
 
-
-
 {
 
   int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
 
-  TFTscreen.drawRect(textX, scoreTextY + textHeight, textWidth, 2, colour);
+  TFTscreen.drawRect(textX, verticalDotCentrePosition + (2 * textHeight), textWidth, 2, colour);
 }
 
 
-void enterTrue(){
+void scoreBoard(bool trueScore)
+{
   scoreFile = SD.open("scores.txt");
-TFTscreen.background(Black);
-TFTscreen.stroke(White);
+  TFTscreen.background(Black);
+  TFTscreen.stroke(White);
 
-int textY = 5;
+  int textY = 5;
+  int positionOnBoard = 1;
+  structuredSelectableText("SCORES", textY, false, true, false);
 
-  while (scoreFile.available())
+  textY = textHeight * 3;
+
+  //char malloc 90
+  // save the number of registered new usernames
+  // compare current to the set of 9 chars + (number of saved *9)
+  // if they are the same, go onto the next, if they are never equal, register the new set of chars and print.
+
+  char *bests;
+  bests = (char *)malloc(90);
+  int numberSaved = 0;
+  while (scoreFile.available() && positionOnBoard < 11)
   {
-    
+    SerialUSB.println("start of loop");
     String string = scoreFile.readStringUntil(',');
+    int scoreLineLength = string.length();
 
-    int n = string.length(); 
-    char char_array[n + 1]; 
-  
-    // copying the contents of the 
-    // string to char array 
-    strcpy(char_array, string.c_str());
+    char *nameInFile;
+    nameInFile = (char *)malloc(9);
+    for (int i = 0; i < 9; i++)
+    {
+      nameInFile[i] = string[i];
+    }
+    nameInFile[8] = '\0';
 
-    
+    char *scoreInFile;
+    scoreInFile = (char *)malloc(scoreLineLength - 8);
+    for (int i = 0; i < scoreLineLength - 8; i++)
+    {
+      scoreInFile[i] = string[i + 8];
+    }
+    scoreInFile[scoreLineLength - 8] = '\0';
 
-        TFTscreen.text(char_array, 5, textY );
+    if (numberSaved == 0 || trueScore)
+    {
 
-    textY = textY + textHeight + 5;
+      for (int j = 0; j < 9; j++)
+      {
+        bests[j] = nameInFile[j];
+      }
+      char pos[2];
+      sprintf(pos, "%i", positionOnBoard);
+      TFTscreen.text(pos, 0, textY);
+      structuredSelectableText(nameInFile, textY, false, false, false);
+      structuredSelectableText(scoreInFile, textY, false, false, true);
+
+      textY = textY + textHeight + 5;
+      positionOnBoard++;
+      numberSaved++;
+      SerialUSB.println("first");
+    }
+    else
+    {
+      for (int i = 0; i < numberSaved; i++)
+      {
+        SerialUSB.print("i: ");
+        SerialUSB.println(i);
+
+        SerialUSB.print("number saved: ");
+        SerialUSB.println(numberSaved);
+        char *oneOfTheBest;
+        oneOfTheBest = (char *)malloc(9);
+        for (int j = 0; j < 8; j++)
+        {
+          oneOfTheBest[j] = bests[j + (i * 9)];
+          SerialUSB.print(oneOfTheBest[j]);
+        }
+        SerialUSB.println(".");
+        for (int j = 0; j < 8; j++)
+        {
+
+          SerialUSB.print(nameInFile[j]);
+        }
+        oneOfTheBest[8] = '\0';
+        SerialUSB.println(".");
+        if (strcmp(nameInFile, oneOfTheBest) == 0)
+        {
+          SerialUSB.println("same name");
+          i = numberSaved;
+        }
+        else if (strcmp(nameInFile, oneOfTheBest) != 0 && i == numberSaved - 1)
+        {
+          for (int j = 0; j < 9; j++)
+          {
+            bests[j + ((i + 1) * 9)] = nameInFile[j];
+          }
+          bests[9 + ((i + 1) * 9)] = '\0';
+
+          char pos[2];
+          sprintf(pos, "%i", positionOnBoard);
+          TFTscreen.text(pos, 0, textY);
+          structuredSelectableText(nameInFile, textY, false, false, false);
+          structuredSelectableText(scoreInFile, textY, false, false, true);
+
+          textY = textY + textHeight + 5;
+          positionOnBoard++;
+          numberSaved++;
+          i = numberSaved;
+        }
+      }
+    }
+
+    free(nameInFile);
+    free(scoreInFile);
   }
 
   scoreFile.close();
 
+  waitForB();
+  enterScores();
 }
 
 void enterScores()
 {
+
   TFTscreen.background(Black);
   TFTscreen.stroke(White);
 
@@ -795,54 +837,20 @@ void enterScores()
   switch (selected)
   {
   case 0:
-    enterTrue();
-      while (true)
-  {
-    bButtonState = digitalRead(B_BUTTON);
-
-    if (bButtonState == HIGH)
-    {
-      return;
-    }
-  }
-    // TFTscreen.background(Yellow);
-    // TFTscreen.stroke(Black);
-    // TFTscreen.text("TRUE", 0, 0);
-    // delay(2000);
+    scoreBoard(true);
     break;
   case 1:
-    // enterPersonalBest();
-    TFTscreen.background(Yellow);
-    TFTscreen.stroke(Black);
-    TFTscreen.text("PERSONAL BEST", 0, 0);
-    delay(2000);
+    scoreBoard(false);
     break;
   default:
-    TFTscreen.background(Yellow);
-    TFTscreen.stroke(Black);
-    TFTscreen.text("CRIES IN IMPOSSSIBRU :(", 0, 0);
-    delay(5000);
-  }
-
-  while (true)
-  {
-    bButtonState = digitalRead(B_BUTTON);
-
-    if (bButtonState == HIGH)
-    {
-      return;
-    }
+    errorScreen("INVALID INT");
   }
 }
 
 int scoreTypeSelection()
 {
 
-  TFTscreen.setTextSize(2 * textMultiplier);
-  size_t scoreModeStringLength = strlen("SCORE MODE");
-
-  TFTscreen.text("SCORE MODE", (screenShort - (2 * textWidth * scoreModeStringLength)) / 2, menuVerticalShift - (2 * textHeight));
-  TFTscreen.setTextSize(textMultiplier);
+  structuredSelectableText("SCORE MODE", verticalDotCentrePosition - (4 * textHeight), false, true, false);
 
   bool letGoOfUp = true;
   bool letGoOfDown = true;
@@ -852,9 +860,7 @@ int scoreTypeSelection()
 
   while (true)
   {
-    downButtonState = digitalRead(DOWN_BUTTON);
-    upButtonState = digitalRead(UP_BUTTON);
-    aButtonState = digitalRead(A_BUTTON);
+    readButtonStates();
 
     if (downButtonState == HIGH && letGoOfDown)
     {
@@ -889,6 +895,11 @@ int scoreTypeSelection()
       letGoOfDown = true;
     }
 
+    if (bButtonState == HIGH)
+    {
+      enterMenu();
+    }
+
     delay(50);
   }
 }
@@ -899,42 +910,63 @@ void changeSelectionScoreMenu(int selection)
   switch (selection)
   {
   case 0:
-    TFTscreen.stroke(Green);
-    TFTscreen.text("TRUE", scoreTrueTextX, startTextY);
-    TFTscreen.drawRect(scoreTrueTextX, startTextY + textHeight, scoreTrueTextLength, 1, Green);
 
-    TFTscreen.stroke(White);
-    TFTscreen.text("PERSONAL BEST", scoreBestTextX, scoreTextY);
-    TFTscreen.drawRect(scoreBestTextX, scoreTextY + textHeight, scoreBestTextLength, 1, Black);
+    structuredSelectableText("TRUE", verticalDotCentrePosition - textHeight, true, false, false);
+    structuredSelectableText("PERSONAL BEST", verticalDotCentrePosition + textHeight, false, false, false);
 
     break;
   case 1:
-    TFTscreen.stroke(Green);
-    TFTscreen.text("PERSONAL BEST", scoreBestTextX, scoreTextY);
-    TFTscreen.drawRect(scoreBestTextX, scoreTextY + textHeight, scoreBestTextLength, 1, Green);
-
-    TFTscreen.stroke(White);
-    TFTscreen.text("TRUE", scoreTrueTextX, startTextY);
-    TFTscreen.drawRect(scoreTrueTextX, startTextY + textHeight, scoreTrueTextLength, 1, Black);
+    structuredSelectableText("TRUE", verticalDotCentrePosition - textHeight, false, false, false);
+    structuredSelectableText("PERSONAL BEST", verticalDotCentrePosition + textHeight, true, false, false);
 
     break;
 
   default:
-    TFTscreen.background(Red);
-    TFTscreen.stroke(White);
-    TFTscreen.text("OT OH :(", 0, 0);
-    delay(5000);
-    break;
+    errorScreen("INVALID INT");
   }
 }
 
-void enterSettings()
+void structuredSelectableText(char *text, int height, bool selected, bool title, bool rightHandPushed)
 {
 
-  TFTscreen.background(Yellow);
-  TFTscreen.stroke(Black);
-  TFTscreen.text("UNDER CONSTRUCTION :(", 0, 0);
+  int multiplier = 1;
+  if (title)
+  {
+    TFTscreen.setTextSize(2 * textMultiplier);
+    multiplier = 2;
+  }
+  int textLength = multiplier * (textWidth * strlen(text));
+  int textX = (screenShort - textLength);
 
+  if (!rightHandPushed)
+  {
+    textX = textX / 2;
+  }
+
+  int16_t colourText;
+  int16_t colourUnderscore;
+  if (selected)
+  {
+    colourText = Green;
+    colourUnderscore = Green;
+  }
+  else
+  {
+    colourText = White;
+    colourUnderscore = Black;
+  }
+  TFTscreen.stroke(colourText);
+  TFTscreen.text(text, textX, height);
+  if (!title)
+  {
+    TFTscreen.drawRect(textX, height + (multiplier * textHeight), multiplier * textLength, 1, colourUnderscore);
+  }
+
+  TFTscreen.setTextSize(textMultiplier);
+}
+
+void waitForB()
+{
   while (true)
   {
     bButtonState = digitalRead(B_BUTTON);
@@ -946,16 +978,20 @@ void enterSettings()
   }
 }
 
+void enterSettings()
+{
+
+  TFTscreen.background(Yellow);
+  TFTscreen.stroke(Black);
+  TFTscreen.text("UNDER CONSTRUCTION :(", 0, 0);
+
+  waitForB();
+}
+
 int menuSetup()
 {
   TFTscreen.background(Black);
-  TFTscreen.stroke(White);
-
-  TFTscreen.setTextSize(2 * textMultiplier);
-  size_t jetrisStringLength = strlen("JETRIS");
-
-  TFTscreen.text("JETRIS", (screenShort - (2 * textWidth * jetrisStringLength)) / 2, menuVerticalShift - (2 * textHeight));
-  TFTscreen.setTextSize(textMultiplier);
+  structuredSelectableText("JETRIS", verticalDotCentrePosition - (4 * textHeight), false, true, false);
 
   bool letGoOfUp = true;
   bool letGoOfDown = true;
@@ -965,9 +1001,7 @@ int menuSetup()
 
   while (true)
   {
-    downButtonState = digitalRead(DOWN_BUTTON);
-    upButtonState = digitalRead(UP_BUTTON);
-    aButtonState = digitalRead(A_BUTTON);
+    readButtonStates();
 
     if (downButtonState == HIGH && letGoOfDown)
     {
@@ -1008,63 +1042,41 @@ int menuSetup()
 
 void changeSelectionStartMenu(int selection)
 {
-
   switch (selection)
   {
   case 0:
-    TFTscreen.stroke(Green);
-    TFTscreen.text("START", startTextX, startTextY);
-    TFTscreen.drawRect(startTextX, startTextY + textHeight, startTextLength, 1, Green);
 
-    TFTscreen.stroke(White);
-
-    TFTscreen.text("SCORES", scoreTextX, scoreTextY);
-
-    TFTscreen.drawRect(scoreTextX, scoreTextY + textHeight, scoreTextLength, 1, Black);
-
-    TFTscreen.stroke(White);
-    TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
-    TFTscreen.drawRect(settingsTextX, settingsTextY + textHeight, settingsTextLength, 1, Black);
+    structuredSelectableText("START", verticalDotCentrePosition - textHeight, true, false, false);
+    structuredSelectableText("SCORES", verticalDotCentrePosition + textHeight, false, false, false);
+    structuredSelectableText("SETTINGS", verticalDotCentrePosition + (3 * textHeight), false, false, false);
 
     break;
   case 1:
-    TFTscreen.stroke(Green);
-
-    TFTscreen.text("SCORES", scoreTextX, scoreTextY);
-
-    TFTscreen.drawRect(scoreTextX, scoreTextY + textHeight, scoreTextLength, 1, Green);
-
-    TFTscreen.stroke(White);
-    TFTscreen.text("START", startTextX, startTextY);
-    TFTscreen.drawRect(startTextX, startTextY + textHeight, startTextLength, 1, Black);
-
-    TFTscreen.stroke(White);
-    TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
-    TFTscreen.drawRect(settingsTextX, settingsTextY + textHeight, settingsTextLength, 1, Black);
+    structuredSelectableText("START", verticalDotCentrePosition - textHeight, false, false, false);
+    structuredSelectableText("SCORES", verticalDotCentrePosition + textHeight, true, false, false);
+    structuredSelectableText("SETTINGS", verticalDotCentrePosition + (3 * textHeight), false, false, false);
 
     break;
   case 2:
-    TFTscreen.stroke(Green);
-
-    TFTscreen.text("SETTINGS", settingsTextX, settingsTextY);
-    TFTscreen.drawRect(settingsTextX, settingsTextY + textHeight, settingsTextLength, 1, Green);
-
-    TFTscreen.stroke(White);
-    TFTscreen.text("START", startTextX, startTextY);
-    TFTscreen.drawRect(startTextX, startTextY + textHeight, startTextLength, 1, Black);
-
-    TFTscreen.stroke(White);
-
-    TFTscreen.text("SCORES", scoreTextX, scoreTextY);
-
-    TFTscreen.drawRect(scoreTextX, scoreTextY + textHeight, scoreTextLength, 1, Black);
+    structuredSelectableText("START", verticalDotCentrePosition - textHeight, false, false, false);
+    structuredSelectableText("SCORES", verticalDotCentrePosition + textHeight, false, false, false);
+    structuredSelectableText("SETTINGS", verticalDotCentrePosition + (3 * textHeight), true, false, false);
     break;
   default:
-    TFTscreen.background(Red);
-    TFTscreen.stroke(White);
-    TFTscreen.text("OT OH :(", 0, 0);
-    delay(5000);
-    break;
+    errorScreen("INVALID INT");
+  }
+}
+
+void errorScreen(char *message)
+{
+  TFTscreen.background(Red);
+  TFTscreen.stroke(White);
+  TFTscreen.text("OT OH :(", textHeight, 0);
+  TFTscreen.text(message, 0, textHeight * 3);
+  TFTscreen.text("PLEASE RESET", 0, textHeight * 5);
+
+  while (true)
+  {
   }
 }
 
@@ -1315,12 +1327,7 @@ void commitToPlayGrid(Tetrimino tetrimino)
 
 void moveTetrimino(Tetrimino tetrimino)
 {
-  downButtonState = digitalRead(DOWN_BUTTON);
-  upButtonState = digitalRead(UP_BUTTON);
-  leftButtonState = digitalRead(LEFT_BUTTON);
-  rightButtonState = digitalRead(RIGHT_BUTTON);
-  bButtonState = digitalRead(B_BUTTON);
-  aButtonState = digitalRead(A_BUTTON);
+  readButtonStates();
   if (upButtonState == LOW)
   {
     letGoOfHardDrop = true;

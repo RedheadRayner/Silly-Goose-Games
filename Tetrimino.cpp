@@ -1,20 +1,20 @@
 #include <Arduino.h>
 #include "tetrimino.h"
 
-void Tetrimino::initialise(int gridPass[], int rowNum, int colNum, uint16_t tetColour, int multiplier)
+void Tetrimino::initialise(int gridPass[], int dim, uint16_t tetColour, int multiplier)
 {
-    this->rows = rowNum;
-    this->cols = colNum;
-    startGrid = new int[rowNum * colNum];
-    currentGrid = new int[rowNum * colNum];
+    this->rows = dim;
+    this->cols = dim;
+    startGrid = new int[dim * dim];
+    currentGrid = new int[dim * dim];
     this->colour = tetColour;
 
         for (int j = 0; j < this->cols; j++)
         {
                 for (int i = 0; i < this->rows; ++i)
     {
-            startGrid[i + colNum * j] = gridPass[i + colNum * j];
-            currentGrid[i + colNum * j] = gridPass[i + colNum * j];
+            startGrid[i + dim * j] = gridPass[i + dim * j];
+            currentGrid[i + dim * j] = gridPass[i + dim * j];
         }
     }
 
