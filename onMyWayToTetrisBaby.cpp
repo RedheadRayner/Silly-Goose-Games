@@ -1,22 +1,50 @@
 
-
-//note to self: the scores still seem to be going funny- the commas aren't quite consistent.
-
 #include <SD.h>
 #include <TFT.h> // Arduino LCD library
 #include <SPI.h>
 #include <Arduino.h>
 #include "tetrimino.h"
+
+/* TFT screen pin definitions */
+// TFT screen CS pin definition
 #define TFT_CS PB10
+
+// TFT screen DC pin definition
 #define TFT_DC PB0
+
+// TFT screen RESET pin definition
 #define TFT_RST PB1
 
+/* SD card pin definitions */
+// SD MOSI pin definition
+#define SD_MOSI PB15
+
+// SD MISO pin definition
+#define SD_MISO PB14
+
+// SD SCK pin definition
+#define SD_SCK PB13
+
+// SD CS pin definition
+#define SD_CS PB12
+
+
+/* push button pin definitions */
+// down button pin definition
 #define DOWN_BUTTON PA4
+// up button pin definition
 #define UP_BUTTON PA2
+
+// right button pin definition
 #define RIGHT_BUTTON PA6
+
+// left button pin definition
 #define LEFT_BUTTON PA3
 
+// b button pin definition
 #define B_BUTTON PA1
+
+// a button pin definition
 #define A_BUTTON PA0
 
 // Color definitions
@@ -35,114 +63,225 @@
 #define Blue 0xFD20
 #define GreenYellow 0xAFE5
 
+// the multiplier to scale the gameplay depending on the screen resolution
 int multiplier;
+
+// the scale for the text depending on the screen resolution
 int textMultiplier;
 
-// create an instance of the library
+
+// create an instance of the library for the TFT screen
 TFT TFTscreen = TFT(TFT_CS, TFT_DC, TFT_RST);
 
-// variables will change:
-int downButtonState = 0;  // variable for reading the pushbutton status
-int leftButtonState = 0;  // variable for reading the pushbutton status
-int rightButtonState = 0; // variable for reading the pushbutton status
-int upButtonState = 0;    // variable for reading the pushbutton status
-int bButtonState = 0;     // variable for reading the pushbutton status
-int aButtonState = 0;     // variable for reading the pushbutton status
+// variable for reading the down button status
+int downButtonState = 0;  
 
+// variable for reading the left button status
+int leftButtonState = 0;  
+
+ // variable for reading the right button status
+int rightButtonState = 0;
+
+// variable for reading the up button status
+int upButtonState = 0;    
+
+// variable for reading the b button status
+int bButtonState = 0;   
+
+     // variable for reading the a button status
+int aButtonState = 0;
+
+// the height of the screen (the shortest dimension of the screen)
 int16_t screenShort = TFTscreen.height();
+
+// the width of the screen (the longest dimension of the screen)
 int16_t screenLong = TFTscreen.width();
 
-// initial position of the point is the middle of the screen
+// y position of the point in the middle of the screen
 int verticalDotCentrePosition;
+
+// x position of the point in the middle of the screen
 int horizontalDotCentrePosition;
 
+// the level of the player (to determine fall speed)
 int level;
 
 // direction and speed
 int speed;
 
+// pixel height of text on the screen at text size 1
 int textHeight;
+
+// pixel width of text on the screen at text size 1
 int textWidth;
 
+// a buffer for when drawing boxes
 const int lineDrawBuffer = 1;
+
+// the number of invisable lines at the top of the playgrid
 const int numInvisableRows = 2;
+
+// the number of columns in the playgrid
 const int tetrisGridCols = 10;
+
+// the number of rows in the playgrid
 const int tetrisGridRows = 20;
+
+// the number of rows in the playgrid when including the invisible rows
 const int tetrisGridRowsIncInvis = tetrisGridRows + numInvisableRows;
 
+// the y position of the start (top) playfield
 int verticalPlayFieldStart;
+
+// the x position of the start (lefthand side) playfield
 int horizontalPlayFieldStart;
 
+// height of the playgrid container in pixels
 int heightPlayFieldContainer;
+
+// width of the playgrid container in pixels
 int widthPlayFieldContainer;
 
+// height of the playgrid in pixels
 int heightPlayField;
+
+// width of the playgrid in pixels
 int widthPlayField;
 
+// the x position of the rightmost point in the playgrid
 int linePosHorizontalMaxRight;
+
+// the y position of the upmost point in the playgrid
 int linePosVerticalMaxUp;
+
+// the y position of the bottommost point in the playgrid
 int linePosVerticalMaxDown;
+
+// the x position of the leftmost point in the playgrid
 int linePosHorizontalMaxLeft;
 
+// the y position of the start point in the playgrid
 int verticalStartPosition;
 
+// the x position of the middle point in the playgrid
 int middleOfPlayField;
+
+// the x position of the start point in the playgrid
 int horizontalStartPosition;
 
 // variables to keep track of the point's location
+// the current vertical position of the tetrimino grid
 int verticalDotPosition;
+
+// the current horizontal position of the tetrimino grid
 int horizontalDotPosition;
+
+// the previous vertical position of the tetrimino grid
 int previousVerticalDotPosition;
+
+// the previous horizontal position of the tetrimino grid
 int previousHorizontalDotPosition;
 
+// the current vertical position of the ghost tetrimino grid
 int verticalGhostPosition;
+
+// the previous vertical position of the ghost tetrimino grid
 int previousVerticalGhostPosition;
 
-int lineMultiplier;
-
-int previousLevel = level;
+// the number of cleared lines for checking for level up
 int clearedLines;
-long timeTaken;
-long previousTime;
+
+// the time at which a tetrimino makes a one block fall
 long fallSpeed;
+
+// whether the tetrimino is still alive to manipulate
 bool tetriminoAlive;
+
+// whether the tetrimino is still in play (else, in the hold)
 bool tetriminoInPlay;
+
+// whether the game is still alive to play (else, game over)
 bool gameAlive;
+
+// whether the hard drop button has been released
 bool letGoOfHardDrop;
+
+// whether the rotate button has been released
 bool letGoOfRotate;
+
+// the current tetrimino grid in play (to check the validity of tetrimino movement)
 int *currentTetriminoGrid;
 
+/* the tetriminos */
+// the o tetrimino
 Tetrimino o_tetrimino;
+
+// the l tetrimino
 Tetrimino l_tetrimino;
+
+// the t tetrimino
 Tetrimino t_tetrimino;
+
+// the i tetrimino
 Tetrimino i_tetrimino;
+
+// the j tetrimino
 Tetrimino j_tetrimino;
+
+// the s tetrimino
 Tetrimino s_tetrimino;
+
+// the z tetrimino
 Tetrimino z_tetrimino;
 
+// the tetrimino in the hold cell
 Tetrimino holdTetrimino;
 
+// the 7 tetriminos in an array to be chosen from
 Tetrimino *tetriminoArray[7] = {&o_tetrimino, &l_tetrimino, &t_tetrimino, &i_tetrimino, &j_tetrimino, &s_tetrimino, &z_tetrimino};
 
+// the play grid (and the colour of the blocks)
 uint16_t playGrid[tetrisGridCols * tetrisGridRowsIncInvis];
 
+// the hold and next up box horizontal size
 int sideBoxUnitHorizontal;
+
+// the next up box vertical size
 int sideBoxUnitVertical;
+
+// the hold box vertical size
 int holdBoxVertical;
+
+// the vertical position of the score text
 int scoreTextVertical;
 
+// the vertical position of the level text
 int levelTextVertical;
 
+// the vertical position of the next up text
 int nextUpVertical;
+
+// the horizontal position of the side boxes
 int sideBoxHorizontal;
+
+// whether the hold is empty or contains a tetrimino
+bool emptyHold;
+
+// whether the current tetrimino is allowed into the hold (if it just came out of the hold, it cannot immediately be placed back in the hold)
+bool holdAvailable;
+
+// the randomiser for the selection of tetrimino
+int selectorRand[7];
+
+// the current score
+int score;
+
 
 void spawnTetrimino(Tetrimino tetrimino);
 
 void moveTetrimino(Tetrimino tetrimino);
 void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour);
-
 void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour);
-
 void moveScreenTetrimino(Tetrimino tetrimino);
 void rotateScreenTetrimino(Tetrimino tetrimino);
 void movedDown(Tetrimino tetrimino);
@@ -189,16 +328,11 @@ void structuredSelectableText(char *text, int height, bool selected, bool title,
 void readButtonStates();
 void errorScreen(char *message);
 void scoreBoard(bool trueScore);
-bool emptyHold;
-bool holdAvailable;
-unsigned getNumberOfDigits(unsigned i);
-int selectorRand[7];
-int score;
+char* position(int place);
 
-#define SD_MOSI PB15
-#define SD_MISO PB14
-#define SD_SCK PB13
-#define SD_CS PB12
+unsigned getNumberOfDigits(unsigned i);
+
+
 
 File scoreFile;
 
@@ -430,6 +564,10 @@ void enterGame()
 
 char *newPlayer()
 {
+    TFTscreen.background(Black);
+  structuredSelectableText("ENTER", verticalDotCentrePosition - (7 * textHeight), false, true, false);
+  structuredSelectableText("YOUR", verticalDotCentrePosition - (5 * textHeight), false, true, false);
+  structuredSelectableText("NAME", verticalDotCentrePosition - (3 * textHeight), false, true, false);
   char *characters[27] = {" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
   int letters[8] = {0, 0, 0, 0, 0, 0, 0, 0};
   int charactSelec = 0;
@@ -527,22 +665,14 @@ char *newPlayer()
   for (int i = 0; i < 8; i++)
   {
     name[i] = *characters[letters[i]];
-    SerialUSB.print(name[i]);
   }
-  SerialUSB.println("!");
   name[8] = '\0';
 
-  SerialUSB.print("Returning name ");
-  SerialUSB.print(name);
-  SerialUSB.println("!");
   return name;
 }
 
 void enterGameEndedPhase()
 {
-
-  // Here, what I want to do is, I want to access the database of saved people and their scores.
-  //Step one, select player or create new player.
 
   TFTscreen.background(Black);
   char *name = newPlayer();
@@ -550,23 +680,6 @@ void enterGameEndedPhase()
   structuredSelectableText("PLEASE", verticalDotCentrePosition - (2 * textHeight), false, true, false);
   structuredSelectableText("WAIT", verticalDotCentrePosition, false, true, false);
 
-  // If select player, display the names with arrow keys, A selects the name, B goes back to the previous screen.
-  // Once selected, display their highscore and current score.
-  // If the current score beats the high score, some kind of congrats and then overwrite the previous.
-  // If it does not, say, better luck next timen [name].
-
-  // If creating a new player, simply add their highscore and name.
-  // Welcome, [name]. Your highscore has now been saved.
-
-  // Here's where you rank amongst others:
-  // a reel of the scores and their usernames
-  // Some kind of ordering will have to happen here with the highscores (with the current person highlighted or in a different colour (green?)).
-
-  // I should save them in order so that the highscore accessed from the menu is just a matter of reading the text file and displaying.
-  // Clicking next displays a prophecy:
-  // no one has yet to beat the mighty [name]
-
-  // SerialUSB.println("checking file...");
   int scoreLinesCounting = 0;
   String restOfFile = "";
   int place = 1;
@@ -575,14 +688,12 @@ void enterGameEndedPhase()
   while (scoreFile.available() && place < 1001)
   {
     String string = scoreFile.readStringUntil(',');
-    SerialUSB.println(string);
     int scoreLineLength = string.length();
     char *nameInBoard;
     nameInBoard = (char *)malloc(9);
     for (int i = 0; i < 8; i++)
     {
       nameInBoard[i] = string[i];
-      SerialUSB.print(string[i]);
     }
     nameInBoard[8] = '\0';
 
@@ -597,7 +708,6 @@ void enterGameEndedPhase()
       }
 
       actualIntScore = actualIntScore + (tenthPow * (string[i + 8] - '0'));
-      SerialUSB.print(string[i + 8]);
     }
 
     if (score <= actualIntScore)
@@ -610,8 +720,6 @@ void enterGameEndedPhase()
     {
       restOfFile = string + ',' + scoreFile.readString();
 
-      SerialUSB.println("the rest of the file: ");
-      SerialUSB.println(restOfFile);
       break;
     }
 
@@ -628,20 +736,49 @@ void enterGameEndedPhase()
   scoreFile.close();
   TFTscreen.background(Black);
 
-  structuredSelectableText("SCORE", verticalDotCentrePosition - (5 * textHeight), false, true, false);
+  structuredSelectableText("YOU ARE", verticalDotCentrePosition - (3 * textHeight), false, true, false);
 
-  structuredSelectableText("POSITION", verticalDotCentrePosition - (3 * textHeight), false, true, false);
-
-  char pos[getNumberOfDigits(place)];
-  sprintf(pos, "%i", place);
-  structuredSelectableText(pos, verticalDotCentrePosition, false, true, false);
-
+  char *positionText = position(place);
+  structuredSelectableText(positionText, verticalDotCentrePosition, false, true, false);
+ free(positionText);
   free(name);
 
-  structuredSelectableText("PRESS B", verticalDotCentrePosition + (5 * textHeight), false, false, false);
-  structuredSelectableText("FOR SCORES", verticalDotCentrePosition + (6 * textHeight), false, false, false);
+  structuredSelectableText("PRESS B", verticalDotCentrePosition + (6 * textHeight), false, false, false);
+  structuredSelectableText("FOR SCORES", verticalDotCentrePosition + (7 * textHeight), false, false, false);
   waitForB();
   scoreBoard(true);
+}
+
+char* position(int place){
+char* suffix;
+  int lastDigit = place % 10;
+ if(lastDigit==1){
+   suffix = "st";
+ }else if( lastDigit ==2){
+suffix = "nd";
+ }else if (lastDigit == 3){
+suffix = "rd";
+ }else {
+suffix = "th";
+ }
+char pos[getNumberOfDigits(place)];
+  sprintf(pos, "%i", place);
+
+ char *returnable;
+
+ returnable = (char *)malloc(getNumberOfDigits(place)+3);
+for (int i = 0 ; i <getNumberOfDigits(place) ; i++ )
+  {
+returnable[i] = pos[i];
+  }
+returnable[getNumberOfDigits(place)] = suffix[0];
+
+returnable[getNumberOfDigits(place)+1] = suffix[1];
+
+returnable[getNumberOfDigits(place)+2] = '\0';
+
+  return returnable;
+
 }
 
 unsigned getNumberOfDigits(unsigned i)
@@ -727,7 +864,6 @@ void scoreBoard(bool trueScore)
   int numberSaved = 0;
   while (scoreFile.available() && positionOnBoard < 11)
   {
-    SerialUSB.println("start of loop");
     String string = scoreFile.readStringUntil(',');
     int scoreLineLength = string.length();
 
@@ -763,35 +899,20 @@ void scoreBoard(bool trueScore)
       textY = textY + textHeight + 5;
       positionOnBoard++;
       numberSaved++;
-      SerialUSB.println("first");
     }
     else
     {
       for (int i = 0; i < numberSaved; i++)
       {
-        SerialUSB.print("i: ");
-        SerialUSB.println(i);
-
-        SerialUSB.print("number saved: ");
-        SerialUSB.println(numberSaved);
         char *oneOfTheBest;
         oneOfTheBest = (char *)malloc(9);
         for (int j = 0; j < 8; j++)
         {
           oneOfTheBest[j] = bests[j + (i * 9)];
-          SerialUSB.print(oneOfTheBest[j]);
-        }
-        SerialUSB.println(".");
-        for (int j = 0; j < 8; j++)
-        {
-
-          SerialUSB.print(nameInFile[j]);
         }
         oneOfTheBest[8] = '\0';
-        SerialUSB.println(".");
         if (strcmp(nameInFile, oneOfTheBest) == 0)
         {
-          SerialUSB.println("same name");
           i = numberSaved;
         }
         else if (strcmp(nameInFile, oneOfTheBest) != 0 && i == numberSaved - 1)
@@ -928,7 +1049,7 @@ void changeSelectionScoreMenu(int selection)
 
 void structuredSelectableText(char *text, int height, bool selected, bool title, bool rightHandPushed)
 {
-
+ 
   int multiplier = 1;
   if (title)
   {
@@ -1169,7 +1290,7 @@ void updateLevel()
 
 void checkForClearLine()
 {
-  lineMultiplier = 0;
+  int lineMultiplier = 0;
 
   bool needsReDoing = false;
   for (int m = 0; m < tetrisGridRowsIncInvis; m++)
@@ -1236,8 +1357,11 @@ void checkForClearLine()
   }
 }
 
+// spawns the terimino into the playgrid
 void spawnTetrimino(Tetrimino tetrimino)
 {
+  long timeTaken;
+  long previousTime;
   tetrimino.spawn();
   tetriminoAlive = true;
   tetriminoInPlay = true;
@@ -1252,6 +1376,7 @@ void spawnTetrimino(Tetrimino tetrimino)
   spawnGhost(tetrimino);
   letGoOfHardDrop = false;
   previousTime = millis();
+
   while (tetriminoAlive && tetriminoInPlay)
   {
 
@@ -1259,6 +1384,7 @@ void spawnTetrimino(Tetrimino tetrimino)
     timeTaken = millis() - previousTime;
     if (timeTaken >= fallSpeed)
     {
+
       tryToMoveDown(tetrimino, false);
       previousTime = millis();
     };
@@ -1302,7 +1428,6 @@ void spawnTetrimino(Tetrimino tetrimino)
 
 void commitToPlayGrid(Tetrimino tetrimino)
 {
-
   for (int m = 0; m < tetrimino.rows; m++)
   {
 
@@ -1323,6 +1448,7 @@ void commitToPlayGrid(Tetrimino tetrimino)
       }
     }
   }
+
 }
 
 void moveTetrimino(Tetrimino tetrimino)
@@ -1333,30 +1459,30 @@ void moveTetrimino(Tetrimino tetrimino)
     letGoOfHardDrop = true;
   }
 
-  if (downButtonState == HIGH && gameAlive)
+  if (downButtonState == HIGH && gameAlive && tetriminoAlive)
   {
     //TODO - implement legit faster fall rules
     tryToMoveDown(tetrimino, true);
   }
-  if (upButtonState == HIGH && letGoOfHardDrop && gameAlive)
+  if (upButtonState == HIGH && letGoOfHardDrop && gameAlive && tetriminoAlive)
   {
     hardDrop(tetrimino);
   }
-  if (leftButtonState == HIGH && gameAlive)
+
+  if (leftButtonState == HIGH && gameAlive && tetriminoAlive)
   {
     tryToMoveLeft(tetrimino);
   }
-  if (rightButtonState == HIGH && gameAlive)
+  if (rightButtonState == HIGH && gameAlive && tetriminoAlive)
   {
-
     tryToMoveRight(tetrimino);
   }
 
-  if (aButtonState == HIGH && holdAvailable && gameAlive)
+  if (aButtonState == HIGH && holdAvailable && gameAlive && tetriminoAlive)
   {
     tetriminoInPlay = false;
   }
-  if (bButtonState == HIGH && letGoOfRotate && gameAlive)
+  if (bButtonState == HIGH && letGoOfRotate && gameAlive && tetriminoAlive)
   {
 
     letGoOfRotate = false;
@@ -1366,8 +1492,6 @@ void moveTetrimino(Tetrimino tetrimino)
   {
     letGoOfRotate = true;
   }
-
-  previousLevel = level;
   delay(50);
 }
 
@@ -1375,12 +1499,15 @@ void hardDrop(Tetrimino tetrimino)
 {
   int hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
   int counter = 0;
-  while (!hitBottom(tetrimino, hypotheticalVerticalDotPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalDotPosition)))
+  while (!hitBottom(tetrimino, hypotheticalVerticalDotPosition) && !overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalDotPosition))
   {
     verticalDotPosition = hypotheticalVerticalDotPosition;
     hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
     counter++;
   }
+
+
+  
   movedDown(tetrimino);
   tetriminoAlive = false;
   score = score + (2 * counter);
@@ -1582,6 +1709,7 @@ void rotateScreenTetrimino(Tetrimino tetrimino)
 
 void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour)
 {
+
   if (startHorizontalDotPosition > linePosHorizontalMaxRight)
   {
 
