@@ -31,9 +31,9 @@
 
 /* push button pin definitions */
 // down button pin definition
-#define DOWN_BUTTON PA4
+#define DOWN_BUTTON PA2
 // up button pin definition
-#define UP_BUTTON PA2
+#define UP_BUTTON PA4
 
 // right button pin definition
 #define RIGHT_BUTTON PA6
@@ -88,7 +88,7 @@ int upButtonState = 0;
 // variable for reading the b button status
 int bButtonState = 0;   
 
-     // variable for reading the a button status
+// variable for reading the a button status
 int aButtonState = 0;
 
 // the height of the screen (the shortest dimension of the screen)
@@ -338,17 +338,13 @@ File scoreFile;
 
 void setup()
 {
-
+ 
   SerialUSB.begin();
   TFTscreen.begin();
   TFTscreen.setRotation(0);
 
   SD.begin(SD_CS, SD_MOSI, SD_MISO, SD_SCK);
 
-  // PImage parrotImage = TFTscreen.loadImage("PARROT.BMP");
-  // TFTscreen.image(parrotImage,0,0);
-  //
-  // delay(5000);
 
   multiplier = 1;
   while (((float)screenLong / ((float)(tetrisGridRows * (multiplier + 1)))) > 1.0)
@@ -433,6 +429,9 @@ void setup()
                    0, 0, 0};
 
   z_tetrimino.initialise(zArray, 3, Red, multiplier);
+  pinMode(PB11, OUTPUT);
+  analogWrite(PB11, 100);
+
 
   pinMode(DOWN_BUTTON, INPUT);
   pinMode(UP_BUTTON, INPUT);
@@ -454,7 +453,6 @@ void setup()
   levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * multiplier);
 
   TFTscreen.setTextSize(textMultiplier);
-  // SD.remove("scores.txt");
   scoreFile = SD.open("scores.txt", FILE_WRITE);
   scoreFile.close();
   if (!SD.exists("scores.txt"))
@@ -657,7 +655,7 @@ char *newPlayer()
       letGoOfB = true;
     }
 
-    delay(75);
+    delay(200);
   }
 
   char *name;
