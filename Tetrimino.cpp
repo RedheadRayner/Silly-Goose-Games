@@ -21,6 +21,7 @@ void Tetrimino::initialise(int gridPass[], int dim, uint16_t tetColour, int mult
     
 }
 
+// Spawns the tetrimino piece
 void Tetrimino::spawn(){
   for (int j = 0; j < this->cols; j++)
         {
@@ -31,6 +32,7 @@ void Tetrimino::spawn(){
     }
 }
 
+// The number of blocks to the right until it hits the playfield right-hand side
 int Tetrimino::blocksRight()
 {
     int i, j;
@@ -48,6 +50,7 @@ int Tetrimino::blocksRight()
     return this->rows - i;
 }
 
+// The number of blocks to the left until it hits the playfield left-hand side
 int Tetrimino::blocksLeft()
 {
     int i, j;
@@ -65,6 +68,7 @@ int Tetrimino::blocksLeft()
     return  i;
 }
 
+// The number of blocks to downward until it hits the playfield bottom
 int Tetrimino::blocksDown()
 {
     int i, j;
@@ -106,7 +110,7 @@ boolean Tetrimino::booleanOfStartGrid(int row, int col)
 //90°) i=w(w-1) + y - wx
 //180°) i= w^2 - 1 - wy - x
 //270°) i= w - 1 - y +wx
-
+// Rotates the tetrimino grid
 void Tetrimino::rotateGrid()
 {
 int rotatedGrid[this->cols * this->rows];
@@ -129,6 +133,7 @@ int rotatedGrid[this->cols * this->rows];
     }
 }
 
+// Undoes rotation
 void Tetrimino::unrotateGrid()
 {
 int unrotatedGrid[this->cols * this->rows];

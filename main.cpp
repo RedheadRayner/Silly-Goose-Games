@@ -70,7 +70,6 @@ int multiplier;
 // the scale for the text depending on the screen resolution
 int textMultiplier;
 
-
 // create an instance of the library for the TFT screen
 TFT TFTscreen = TFT(TFT_CS, TFT_DC, TFT_RST);
 
@@ -421,6 +420,7 @@ void readButtonStates()
   aButtonState = digitalRead(A_BUTTON);
 }
 
+// Main menu selector
 void enterMenu()
 {
   int selected = menuSetup();
@@ -440,6 +440,7 @@ void enterMenu()
   }
 }
 
+// Begins the tetris gameplay
 void enterGame()
 {
   gameScreenSetup();
@@ -505,6 +506,7 @@ void enterGame()
   enterGameEndedPhase();
 }
 
+// Allows the player to create a name to save to the scoreboard.
 char *newPlayer()
 {
     TFTscreen.background(Black);
@@ -614,6 +616,7 @@ char *newPlayer()
   return name;
 }
 
+// Displays the player ranking 
 void enterGameEndedPhase()
 {
 
