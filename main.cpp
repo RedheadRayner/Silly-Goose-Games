@@ -1,101 +1,4 @@
-
-#include <SD.h>
-#include <TFT.h> // Arduino LCD library
-#include <SPI.h>
 #include "main.h"
-#include <Arduino.h>
-#include "tetrimino.h"
-
-/* TFT screen pin definitions */
-// TFT screen CS pin definition
-#define TFT_CS PB10
-
-// TFT screen DC pin definition
-#define TFT_DC PB0
-
-// TFT screen RESET pin definition
-#define TFT_RST PB1
-
-/* SD card pin definitions */
-// SD MOSI pin definition
-#define SD_MOSI PB15
-
-// SD MISO pin definition
-#define SD_MISO PB14
-
-// SD SCK pin definition
-#define SD_SCK PB13
-
-// SD CS pin definition
-#define SD_CS PB12
-
-
-/* push button pin definitions */
-// down button pin definition
-#define DOWN_BUTTON PA2
-// up button pin definition
-#define UP_BUTTON PA4
-
-// right button pin definition
-#define RIGHT_BUTTON PA6
-
-// left button pin definition
-#define LEFT_BUTTON PA3
-
-// b button pin definition
-#define B_BUTTON PA1
-
-// a button pin definition
-#define A_BUTTON PA0
-
-// Color definitions
-/* some RGB color definitions                                                 */
-#define Black 0x0000
-#define Green 0x03E0
-#define Yellow 0x03EF
-#define DarkBlue 0x7800
-#define Pink 0x780F
-#define LightGrey 0xC618
-#define DarkGrey 0x7BEF
-#define Red 0x001F
-#define Orange 0x02EF
-#define Green 0x07E0
-#define White 0xFFFF
-#define Blue 0xFD20
-#define GreenYellow 0xAFE5
-
-// the multiplier to scale the gameplay depending on the screen resolution
-int multiplier;
-
-// the scale for the text depending on the screen resolution
-int textMultiplier;
-
-// create an instance of the library for the TFT screen
-TFT TFTscreen = TFT(TFT_CS, TFT_DC, TFT_RST);
-
-// variable for reading the down button status
-int downButtonState = 0;  
-
-// variable for reading the left button status
-int leftButtonState = 0;  
-
- // variable for reading the right button status
-int rightButtonState = 0;
-
-// variable for reading the up button status
-int upButtonState = 0;    
-
-// variable for reading the b button status
-int bButtonState = 0;   
-
-// variable for reading the a button status
-int aButtonState = 0;
-
-// the height of the screen (the shortest dimension of the screen)
-int16_t screenShort = TFTscreen.height();
-
-// the width of the screen (the longest dimension of the screen)
-int16_t screenLong = TFTscreen.width();
 
 // y position of the point in the middle of the screen
 int verticalDotCentrePosition;
@@ -276,35 +179,27 @@ int selectorRand[7];
 // the current score
 int score;
 
-
+SillyGoose sillyGoose;
 
 File scoreFile;
 
 void setup()
 {
+  sillyGoose.initialise(tetrisGridRows);
  
   SerialUSB.begin();
-  TFTscreen.begin();
-  TFTscreen.setRotation(0);
+  SerialUSB.println(sillyGoose.scaleDisplay );
+  SerialUSB.println(sillyGoose.scaleText );
+  SerialUSB.println(sillyGoose.screenShort );
+  SerialUSB.println(sillyGoose.screenLong );
 
-  SD.begin(SD_CS, SD_MOSI, SD_MISO, SD_SCK);
-
-
-  multiplier = 1;
-  while (((float)screenLong / ((float)(tetrisGridRows * (multiplier + 1)))) > 1.0)
-  {
-    multiplier++;
-  }
-
-  textMultiplier = multiplier / 7;
-
-  heightPlayField = (tetrisGridRows * multiplier);
+  heightPlayField = (tetrisGridRows * sillyGoose.scaleDisplay);
   heightPlayFieldContainer = heightPlayField + (2 * lineDrawBuffer);
-  widthPlayField = (tetrisGridCols * multiplier);
+  widthPlayField = (tetrisGridCols * sillyGoose.scaleDisplay);
   widthPlayFieldContainer = widthPlayField + (2 * lineDrawBuffer);
 
-  verticalDotCentrePosition = screenLong / 2;
-  horizontalDotCentrePosition = screenShort / 2;
+  verticalDotCentrePosition = sillyGoose.screenLong / 2;
+  horizontalDotCentrePosition = sillyGoose.screenShort / 2;
 
   verticalPlayFieldStart = verticalDotCentrePosition - (heightPlayFieldContainer / 2);
   horizontalPlayFieldStart = verticalPlayFieldStart;
@@ -314,10 +209,10 @@ void setup()
   linePosHorizontalMaxLeft = horizontalPlayFieldStart + lineDrawBuffer;
   linePosHorizontalMaxRight = linePosHorizontalMaxLeft + widthPlayField;
 
-  verticalStartPosition = linePosVerticalMaxUp - (numInvisableRows * multiplier);
+  verticalStartPosition = linePosVerticalMaxUp - (numInvisableRows * sillyGoose.scaleDisplay);
 
   middleOfPlayField = linePosHorizontalMaxLeft + (widthPlayField / 2);
-  horizontalStartPosition = middleOfPlayField - multiplier;
+  horizontalStartPosition = middleOfPlayField - sillyGoose.scaleDisplay;
 
   // variables to keep track of the point's location
   verticalDotPosition = verticalStartPosition;
@@ -335,68 +230,61 @@ void setup()
       1,
   };
 
-  o_tetrimino.initialise(oArray, 2, Yellow, multiplier);
+  o_tetrimino.initialise(oArray, 2, Yellow, sillyGoose.scaleDisplay);
 
   int iArray[16] = {0, 0, 0, 0,
                     1, 1, 1, 1,
                     0, 0, 0, 0,
                     0, 0, 0, 0};
 
-  i_tetrimino.initialise(iArray, 4, Blue, multiplier);
+  i_tetrimino.initialise(iArray, 4, Blue, sillyGoose.scaleDisplay);
 
   int tArray[9] = {0, 1, 0,
                    1, 1, 1,
                    0, 0, 0};
 
-  t_tetrimino.initialise(tArray, 3, Pink, multiplier);
+  t_tetrimino.initialise(tArray, 3, Pink, sillyGoose.scaleDisplay);
 
   int lArray[9] = {0, 0, 1,
                    1, 1, 1,
                    0, 0, 0};
 
-  l_tetrimino.initialise(lArray, 3, Orange, multiplier);
+  l_tetrimino.initialise(lArray, 3, Orange, sillyGoose.scaleDisplay);
 
   int jArray[9] = {1, 0, 0,
                    1, 1, 1,
                    0, 0, 0};
 
-  j_tetrimino.initialise(jArray, 3, DarkBlue, multiplier);
+  j_tetrimino.initialise(jArray, 3, DarkBlue, sillyGoose.scaleDisplay);
 
   int sArray[9] = {0, 1, 1,
                    1, 1, 0,
                    0, 0, 0};
 
-  s_tetrimino.initialise(sArray, 3, Green, multiplier);
+  s_tetrimino.initialise(sArray, 3, Green, sillyGoose.scaleDisplay);
 
   int zArray[9] = {1, 1, 0,
                    0, 1, 1,
                    0, 0, 0};
 
-  z_tetrimino.initialise(zArray, 3, Red, multiplier);
-  pinMode(PB11, OUTPUT);
-  analogWrite(PB11, 100);
+  z_tetrimino.initialise(zArray, 3, Red, sillyGoose.scaleDisplay);
 
 
-  pinMode(DOWN_BUTTON, INPUT);
-  pinMode(UP_BUTTON, INPUT);
-  pinMode(LEFT_BUTTON, INPUT);
-  pinMode(RIGHT_BUTTON, INPUT);
-  pinMode(B_BUTTON, INPUT);
-  pinMode(A_BUTTON, INPUT);
 
-  textHeight = textMultiplier * 8;
-  textWidth = textMultiplier * 6;
 
-  sideBoxUnitHorizontal = (4 * multiplier) + (2 * lineDrawBuffer);
-  sideBoxUnitVertical = (3 * multiplier) + (2 * lineDrawBuffer);
-  sideBoxHorizontal = ((screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnitHorizontal) / 2) - lineDrawBuffer;
-  holdBoxVertical = verticalPlayFieldStart + multiplier;
+  textHeight = sillyGoose.scaleText * 8;
+  textWidth = sillyGoose.scaleText * 6;
 
-  nextUpVertical = holdBoxVertical + sideBoxUnitVertical + (2 * multiplier);
-  scoreTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (2.5 * multiplier);
-  levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * multiplier);
+  sideBoxUnitHorizontal = (4 * sillyGoose.scaleDisplay) + (2 * lineDrawBuffer);
+  sideBoxUnitVertical = (3 * sillyGoose.scaleDisplay) + (2 * lineDrawBuffer);
+  sideBoxHorizontal = ((sillyGoose.screenShort + (widthPlayFieldContainer + horizontalPlayFieldStart) - sideBoxUnitHorizontal) / 2) - lineDrawBuffer;
+  holdBoxVertical = verticalPlayFieldStart + sillyGoose.scaleDisplay;
 
-  TFTscreen.setTextSize(textMultiplier);
+  nextUpVertical = holdBoxVertical + sideBoxUnitVertical + (2 * sillyGoose.scaleDisplay);
+  scoreTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (2.5 * sillyGoose.scaleDisplay);
+  levelTextVertical = nextUpVertical + (2 * sideBoxUnitVertical) + (6 * sillyGoose.scaleDisplay);
+
+  
   scoreFile = SD.open("scores.txt", FILE_WRITE);
   scoreFile.close();
   if (!SD.exists("scores.txt"))
@@ -410,15 +298,7 @@ void loop()
   enterMenu();
 }
 
-void readButtonStates()
-{
-  downButtonState = digitalRead(DOWN_BUTTON);
-  upButtonState = digitalRead(UP_BUTTON);
-  leftButtonState = digitalRead(LEFT_BUTTON);
-  rightButtonState = digitalRead(RIGHT_BUTTON);
-  bButtonState = digitalRead(B_BUTTON);
-  aButtonState = digitalRead(A_BUTTON);
-}
+
 
 // Main menu selector
 void enterMenu()
@@ -445,7 +325,7 @@ void enterGame()
 {
   gameScreenSetup();
 
-  TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
+  sillyGoose.TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
   gameAlive = true;
   emptyHold = true;
   clearedLines = 0;
@@ -477,7 +357,7 @@ void enterGame()
 
     for (int index = 0; index < 7; index++)
     {
-      TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
+      sillyGoose.TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
 
       Tetrimino nextTet = *tetriminoArray[randomTetriminos[index + 1]];
       fillInGrid(nextTet, sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, true, nextTet.colour);
@@ -509,7 +389,7 @@ void enterGame()
 // Allows the player to create a name to save to the scoreboard.
 char *newPlayer()
 {
-    TFTscreen.background(Black);
+    sillyGoose.TFTscreen.background(Black);
   structuredSelectableText("ENTER", verticalDotCentrePosition - (7 * textHeight), false, true, false);
   structuredSelectableText("YOUR", verticalDotCentrePosition - (5 * textHeight), false, true, false);
   structuredSelectableText("NAME", verticalDotCentrePosition - (3 * textHeight), false, true, false);
@@ -524,9 +404,9 @@ char *newPlayer()
 
   while (true)
   {
-    readButtonStates();
+   sillyGoose. readButtonStates();
 
-    if (downButtonState == HIGH)
+    if (sillyGoose.downButtonState == HIGH)
     {
       if (letters[charactSelec] == 26)
       {
@@ -541,7 +421,7 @@ char *newPlayer()
       changeSelectionScoreName(charactSelec, characters[letters[charactSelec]], Green);
       changeSelectionScoreArrows(charactSelec, false, Green);
     }
-    if (upButtonState == HIGH)
+    if (sillyGoose.upButtonState == HIGH)
     {
       if (letters[charactSelec] == 0)
       {
@@ -556,16 +436,16 @@ char *newPlayer()
       changeSelectionScoreName(charactSelec, characters[letters[charactSelec]], Green);
       changeSelectionScoreArrows(charactSelec, true, Green);
     }
-    if (upButtonState == LOW)
+    if (sillyGoose.upButtonState == LOW)
     {
       changeSelectionScoreArrows(charactSelec, true, White);
     }
-    if (downButtonState == HIGH)
+    if (sillyGoose.downButtonState == HIGH)
     {
       changeSelectionScoreArrows(charactSelec, false, White);
     }
 
-    if (aButtonState == HIGH && letGoOfA)
+    if (sillyGoose.aButtonState == HIGH && letGoOfA)
     {
       letGoOfA = false;
       changeSelectionScoreName(charactSelec, characters[letters[charactSelec]], White);
@@ -581,7 +461,7 @@ char *newPlayer()
       }
     }
 
-    if (bButtonState == HIGH && letGoOfB)
+    if (sillyGoose.bButtonState == HIGH && letGoOfB)
     {
       letGoOfB = false;
 
@@ -593,11 +473,11 @@ char *newPlayer()
         textNameUnderscore(charactSelec, Green);
       }
     }
-    if (aButtonState == LOW)
+    if (sillyGoose.aButtonState == LOW)
     {
       letGoOfA = true;
     }
-    if (bButtonState == LOW)
+    if (sillyGoose.bButtonState == LOW)
     {
       letGoOfB = true;
     }
@@ -620,9 +500,9 @@ char *newPlayer()
 void enterGameEndedPhase()
 {
 
-  TFTscreen.background(Black);
+  sillyGoose.TFTscreen.background(Black);
   char *name = newPlayer();
-  TFTscreen.background(Black);
+  sillyGoose.TFTscreen.background(Black);
   structuredSelectableText("PLEASE", verticalDotCentrePosition - (2 * textHeight), false, true, false);
   structuredSelectableText("WAIT", verticalDotCentrePosition, false, true, false);
 
@@ -633,6 +513,10 @@ void enterGameEndedPhase()
 
   while (scoreFile.available() && place < 1001)
   {
+    int i=10;
+    if(i=20){
+
+    }
     String string = scoreFile.readStringUntil(',');
     int scoreLineLength = string.length();
     char *nameInBoard;
@@ -680,7 +564,7 @@ void enterGameEndedPhase()
   scoreFile.print(",");
   scoreFile.print(restOfFile);
   scoreFile.close();
-  TFTscreen.background(Black);
+  sillyGoose.TFTscreen.background(Black);
 
   structuredSelectableText("YOU ARE", verticalDotCentrePosition - (3 * textHeight), false, true, false);
 
@@ -735,13 +619,13 @@ unsigned getNumberOfDigits(unsigned i)
 void changeSelectionScoreName(int letterNum, char *character, uint16_t colour)
 {
 
-  int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
+  int textX = (0.5 * sillyGoose.screenShort) - 24 + (letterNum * textWidth);
 
-  TFTscreen.fillRect(textX, verticalDotCentrePosition + textHeight, textWidth, textHeight, Black);
+  sillyGoose.TFTscreen.fillRect(textX, verticalDotCentrePosition + textHeight, textWidth, textHeight, Black);
 
-  TFTscreen.stroke(colour);
+  sillyGoose.TFTscreen.stroke(colour);
 
-  TFTscreen.text(character, textX, verticalDotCentrePosition + textHeight);
+  sillyGoose.TFTscreen.text(character, textX, verticalDotCentrePosition + textHeight);
 }
 
 void makeSelectionScoreArrows()
@@ -756,16 +640,16 @@ void makeSelectionScoreArrows()
 void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour)
 {
 
-  int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
+  int textX = (0.5 * sillyGoose.screenShort) - 24 + (letterNum * textWidth);
 
-  TFTscreen.stroke(colour);
+  sillyGoose.TFTscreen.stroke(colour);
   if (up)
   {
 
     for (int i = 0; i < 5; i++)
     {
 
-      TFTscreen.point(textX + i, verticalDotCentrePosition + abs(i - 2));
+      sillyGoose.TFTscreen.point(textX + i, verticalDotCentrePosition + abs(i - 2));
     }
   }
   else
@@ -773,7 +657,7 @@ void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour)
     for (int i = 0; i < 5; i++)
     {
 
-      TFTscreen.point(textX + i, verticalDotCentrePosition + (3 * textHeight) - abs(i - 2));
+      sillyGoose.TFTscreen.point(textX + i, verticalDotCentrePosition + (3 * textHeight) - abs(i - 2));
     }
   }
 }
@@ -782,17 +666,17 @@ void textNameUnderscore(int letterNum, uint16_t colour)
 
 {
 
-  int textX = (0.5 * screenShort) - 24 + (letterNum * textWidth);
+  int textX = (0.5 * sillyGoose.screenShort) - 24 + (letterNum * textWidth);
 
-  TFTscreen.drawRect(textX, verticalDotCentrePosition + (2 * textHeight), textWidth, 2, colour);
+  sillyGoose.TFTscreen.drawRect(textX, verticalDotCentrePosition + (2 * textHeight), textWidth, 2, colour);
 }
 
 
 void scoreBoard(bool trueScore)
 {
   scoreFile = SD.open("scores.txt");
-  TFTscreen.background(Black);
-  TFTscreen.stroke(White);
+  sillyGoose.TFTscreen.background(Black);
+  sillyGoose.TFTscreen.stroke(White);
 
   int textY = 5;
   int positionOnBoard = 1;
@@ -838,7 +722,7 @@ void scoreBoard(bool trueScore)
       }
       char pos[2];
       sprintf(pos, "%i", positionOnBoard);
-      TFTscreen.text(pos, 0, textY);
+      sillyGoose.TFTscreen.text(pos, 0, textY);
       structuredSelectableText(nameInFile, textY, false, false, false);
       structuredSelectableText(scoreInFile, textY, false, false, true);
 
@@ -871,7 +755,7 @@ void scoreBoard(bool trueScore)
 
           char pos[2];
           sprintf(pos, "%i", positionOnBoard);
-          TFTscreen.text(pos, 0, textY);
+          sillyGoose.TFTscreen.text(pos, 0, textY);
           structuredSelectableText(nameInFile, textY, false, false, false);
           structuredSelectableText(scoreInFile, textY, false, false, true);
 
@@ -896,8 +780,8 @@ void scoreBoard(bool trueScore)
 void enterScores()
 {
 
-  TFTscreen.background(Black);
-  TFTscreen.stroke(White);
+  sillyGoose.TFTscreen.background(Black);
+  sillyGoose.TFTscreen.stroke(White);
 
   int selected = scoreTypeSelection();
 
@@ -927,9 +811,9 @@ int scoreTypeSelection()
 
   while (true)
   {
-    readButtonStates();
+    sillyGoose.readButtonStates();
 
-    if (downButtonState == HIGH && letGoOfDown)
+    if (sillyGoose.downButtonState == HIGH && letGoOfDown)
     {
       if (selected < 1)
       {
@@ -938,7 +822,7 @@ int scoreTypeSelection()
       }
       letGoOfDown = false;
     }
-    if (upButtonState == HIGH && letGoOfUp)
+    if (sillyGoose.upButtonState == HIGH && letGoOfUp)
     {
       if (selected > 0)
       {
@@ -948,21 +832,21 @@ int scoreTypeSelection()
       letGoOfUp = false;
     }
 
-    if (aButtonState == HIGH)
+    if (sillyGoose.aButtonState == HIGH)
     {
       return selected;
     }
-    if (upButtonState == LOW)
+    if (sillyGoose.upButtonState == LOW)
     {
       letGoOfUp = true;
     }
 
-    if (downButtonState == LOW)
+    if (sillyGoose.downButtonState == LOW)
     {
       letGoOfDown = true;
     }
 
-    if (bButtonState == HIGH)
+    if (sillyGoose.bButtonState == HIGH)
     {
       enterMenu();
     }
@@ -999,11 +883,12 @@ void structuredSelectableText(char *text, int height, bool selected, bool title,
   int multiplier = 1;
   if (title)
   {
-    TFTscreen.setTextSize(2 * textMultiplier);
-    multiplier = 2;
+    sillyGoose.TFTscreen.setTextSize(2 * sillyGoose.scaleText);
+     multiplier = 2;
   }
-  int textLength = multiplier * (textWidth * strlen(text));
-  int textX = (screenShort - textLength);
+  
+  int textLength = sillyGoose.scaleDisplay * (textWidth * strlen(text));
+  int textX = (sillyGoose.screenShort - textLength);
 
   if (!rightHandPushed)
   {
@@ -1022,23 +907,23 @@ void structuredSelectableText(char *text, int height, bool selected, bool title,
     colourText = White;
     colourUnderscore = Black;
   }
-  TFTscreen.stroke(colourText);
-  TFTscreen.text(text, textX, height);
+  sillyGoose.TFTscreen.stroke(colourText);
+  sillyGoose.TFTscreen.text(text, textX, height);
   if (!title)
   {
-    TFTscreen.drawRect(textX, height + (multiplier * textHeight), multiplier * textLength, 1, colourUnderscore);
+    sillyGoose.TFTscreen.drawRect(textX, height + (sillyGoose.scaleDisplay * textHeight), sillyGoose.scaleDisplay * textLength, 1, colourUnderscore);
   }
 
-  TFTscreen.setTextSize(textMultiplier);
+  sillyGoose.TFTscreen.setTextSize(sillyGoose.scaleText);
 }
 
 void waitForB()
 {
   while (true)
   {
-    bButtonState = digitalRead(B_BUTTON);
+    sillyGoose.bButtonState = digitalRead(B_BUTTON);
 
-    if (bButtonState == HIGH)
+    if (sillyGoose.bButtonState == HIGH)
     {
       return;
     }
@@ -1048,16 +933,16 @@ void waitForB()
 void enterSettings()
 {
 
-  TFTscreen.background(Yellow);
-  TFTscreen.stroke(Black);
-  TFTscreen.text("UNDER CONSTRUCTION :(", 0, 0);
+  sillyGoose.TFTscreen.background(Yellow);
+  sillyGoose.TFTscreen.stroke(Black);
+  sillyGoose.TFTscreen.text("UNDER CONSTRUCTION :(", 0, 0);
 
   waitForB();
 }
 
 int menuSetup()
 {
-  TFTscreen.background(Black);
+  sillyGoose.TFTscreen.background(Black);
   structuredSelectableText("JETRIS", verticalDotCentrePosition - (4 * textHeight), false, true, false);
 
   bool letGoOfUp = true;
@@ -1068,9 +953,9 @@ int menuSetup()
 
   while (true)
   {
-    readButtonStates();
+    sillyGoose.readButtonStates();
 
-    if (downButtonState == HIGH && letGoOfDown)
+    if (sillyGoose.downButtonState == HIGH && letGoOfDown)
     {
       if (selected < 2)
       {
@@ -1079,7 +964,7 @@ int menuSetup()
       }
       letGoOfDown = false;
     }
-    if (upButtonState == HIGH && letGoOfUp)
+    if (sillyGoose.upButtonState == HIGH && letGoOfUp)
     {
       if (selected > 0)
       {
@@ -1089,16 +974,16 @@ int menuSetup()
       letGoOfUp = false;
     }
 
-    if (aButtonState == HIGH)
+    if (sillyGoose.aButtonState == HIGH)
     {
       return selected;
     }
-    if (upButtonState == LOW)
+    if (sillyGoose.upButtonState == LOW)
     {
       letGoOfUp = true;
     }
 
-    if (downButtonState == LOW)
+    if (sillyGoose.downButtonState == LOW)
     {
       letGoOfDown = true;
     }
@@ -1136,11 +1021,11 @@ void changeSelectionStartMenu(int selection)
 
 void errorScreen(char *message)
 {
-  TFTscreen.background(Red);
-  TFTscreen.stroke(White);
-  TFTscreen.text("OT OH :(", textHeight, 0);
-  TFTscreen.text(message, 0, textHeight * 3);
-  TFTscreen.text("PLEASE RESET", 0, textHeight * 5);
+  sillyGoose.TFTscreen.background(Red);
+  sillyGoose.TFTscreen.stroke(White);
+  sillyGoose.TFTscreen.text("OT OH :(", textHeight, 0);
+  sillyGoose.TFTscreen.text(message, 0, textHeight * 3);
+  sillyGoose.TFTscreen.text("PLEASE RESET", 0, textHeight * 5);
 
   while (true)
   {
@@ -1150,36 +1035,36 @@ void errorScreen(char *message)
 void gameScreenSetup()
 {
   // clear the screen with a black background
-  TFTscreen.background(Black);
-  TFTscreen.stroke(White);
+  sillyGoose.TFTscreen.background(Black);
+  sillyGoose.TFTscreen.stroke(White);
   //screen.rect(xStart, yStart, width, height);
   //xStart : int, the horizontal position where the line starts
   //yStart : int, the vertical position where the line starts
   //width : int, the width of the rectangle
   //height : int, the height of the rectangle
-  TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayFieldContainer, heightPlayFieldContainer);
-  TFTscreen.setTextSize(textMultiplier);
+  sillyGoose.TFTscreen.rect(horizontalPlayFieldStart, verticalPlayFieldStart, widthPlayFieldContainer, heightPlayFieldContainer);
+  sillyGoose.TFTscreen.setTextSize(sillyGoose.scaleText);
 
-  TFTscreen.rect(sideBoxHorizontal, holdBoxVertical, sideBoxUnitHorizontal, sideBoxUnitVertical);
-  TFTscreen.text("HOLD", sideBoxHorizontal, verticalPlayFieldStart);
+  sillyGoose.TFTscreen.rect(sideBoxHorizontal, holdBoxVertical, sideBoxUnitHorizontal, sideBoxUnitVertical);
+  sillyGoose.TFTscreen.text("HOLD", sideBoxHorizontal, verticalPlayFieldStart);
 
-  TFTscreen.text("NEXT", sideBoxHorizontal, holdBoxVertical + sideBoxUnitVertical + multiplier);
-  TFTscreen.rect(sideBoxHorizontal, nextUpVertical, sideBoxUnitHorizontal, 2 * sideBoxUnitVertical);
+  sillyGoose.TFTscreen.text("NEXT", sideBoxHorizontal, holdBoxVertical + sideBoxUnitVertical + sillyGoose.scaleDisplay);
+  sillyGoose.TFTscreen.rect(sideBoxHorizontal, nextUpVertical, sideBoxUnitHorizontal, 2 * sideBoxUnitVertical);
 
-  TFTscreen.text("SCORE", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + multiplier);
-  TFTscreen.text("0", sideBoxHorizontal, scoreTextVertical);
+  sillyGoose.TFTscreen.text("SCORE", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + sillyGoose.scaleDisplay);
+  sillyGoose.TFTscreen.text("0", sideBoxHorizontal, scoreTextVertical);
 
-  TFTscreen.text("LEVEL", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + (4.5 * multiplier));
-  TFTscreen.text("1", sideBoxHorizontal, levelTextVertical);
+  sillyGoose.TFTscreen.text("LEVEL", sideBoxHorizontal, nextUpVertical + (2 * sideBoxUnitVertical) + (4.5 * sillyGoose.scaleDisplay));
+  sillyGoose.TFTscreen.text("1", sideBoxHorizontal, levelTextVertical);
 }
 
 void gameOver()
 {
-  TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
-  TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
-  TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
-  TFTscreen.stroke(White);
-  TFTscreen.text("GAME OVER", (middleOfPlayField - strlen("GAME OVER")) / 2, verticalDotCentrePosition);
+  sillyGoose.TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, nextUpVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), (2 * sideBoxUnitVertical) - (2 * lineDrawBuffer), Black);
+  sillyGoose.TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
+  sillyGoose.TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
+  sillyGoose.TFTscreen.stroke(White);
+  sillyGoose.TFTscreen.text("GAME OVER", (middleOfPlayField - strlen("GAME OVER")) / 2, verticalDotCentrePosition);
 }
 
 void randomSeven()
@@ -1218,20 +1103,20 @@ void checkForLevelUp()
 
 void updateScore()
 {
-  TFTscreen.fillRect(sideBoxHorizontal, scoreTextVertical, sideBoxUnitHorizontal, multiplier, Black);
-  TFTscreen.stroke(White);
+  sillyGoose.TFTscreen.fillRect(sideBoxHorizontal, scoreTextVertical, sideBoxUnitHorizontal, sillyGoose.scaleDisplay, Black);
+  sillyGoose.TFTscreen.stroke(White);
   std::string str = std::to_string(score);
   const char *cstr2 = str.c_str();
-  TFTscreen.text(cstr2, sideBoxHorizontal, scoreTextVertical);
+  sillyGoose.TFTscreen.text(cstr2, sideBoxHorizontal, scoreTextVertical);
 }
 
 void updateLevel()
 {
-  TFTscreen.fillRect(sideBoxHorizontal, levelTextVertical, sideBoxUnitHorizontal, multiplier, Black);
-  TFTscreen.stroke(White);
+  sillyGoose.TFTscreen.fillRect(sideBoxHorizontal, levelTextVertical, sideBoxUnitHorizontal, sillyGoose.scaleDisplay, Black);
+  sillyGoose.TFTscreen.stroke(White);
   std::string str = std::to_string(level);
   const char *cstr2 = str.c_str();
-  TFTscreen.text(cstr2, sideBoxHorizontal, levelTextVertical);
+  sillyGoose.TFTscreen.text(cstr2, sideBoxHorizontal, levelTextVertical);
 }
 
 void checkForClearLine()
@@ -1276,7 +1161,7 @@ void checkForClearLine()
 
   if (needsReDoing)
   {
-    TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
+    sillyGoose.TFTscreen.fillRect(linePosHorizontalMaxLeft, linePosVerticalMaxUp, widthPlayField, heightPlayField, Black);
 
     for (int u = 0; u < tetrisGridRowsIncInvis; u++)
     {
@@ -1286,11 +1171,11 @@ void checkForClearLine()
         uint16_t colourOfGrid = playGrid[r + (tetrisGridCols * u)];
         if (colourOfGrid != 0)
         {
-          int rationalHorizontal = ((r * multiplier) + linePosHorizontalMaxLeft + 1);
+          int rationalHorizontal = ((r * sillyGoose.scaleDisplay) + linePosHorizontalMaxLeft + 1);
 
-          int rationalVertical = ((u - numInvisableRows) * multiplier) + linePosVerticalMaxUp + 1;
+          int rationalVertical = ((u - numInvisableRows) * sillyGoose.scaleDisplay) + linePosVerticalMaxUp + 1;
 
-          TFTscreen.fillRect(rationalHorizontal, rationalVertical, multiplier - 1, multiplier - 1, colourOfGrid);
+          sillyGoose.TFTscreen.fillRect(rationalHorizontal, rationalVertical, sillyGoose.scaleDisplay - 1, sillyGoose.scaleDisplay - 1, colourOfGrid);
         }
         //Do something for the points here...
       }
@@ -1344,7 +1229,7 @@ void spawnTetrimino(Tetrimino tetrimino)
     // Erase the ghost
     ghostGrid(tetrimino, horizontalDotPosition, verticalGhostPosition, true, Black);
     // erase the hold of the old tetrimino
-    TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
+    sillyGoose.TFTscreen.fillRect(sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, sideBoxUnitHorizontal - (2 * lineDrawBuffer), sideBoxUnitVertical - (2 * lineDrawBuffer), Black);
     // colour in the hold with the new tetrimino
     fillInGrid(tetrimino, sideBoxHorizontal + lineDrawBuffer, holdBoxVertical + lineDrawBuffer, true, tetrimino.colour);
 
@@ -1382,8 +1267,8 @@ void commitToPlayGrid(Tetrimino tetrimino)
 
       if (tetrimino.booleanOfGrid(m, n))
       {
-        int rationalHorizontal = (horizontalDotPosition - linePosHorizontalMaxLeft) / multiplier;
-        int rationalVertical = numInvisableRows + ((verticalDotPosition - linePosVerticalMaxUp) / multiplier);
+        int rationalHorizontal = (horizontalDotPosition - linePosHorizontalMaxLeft) / sillyGoose.scaleDisplay;
+        int rationalVertical = numInvisableRows + ((verticalDotPosition - linePosVerticalMaxUp) / sillyGoose.scaleDisplay);
         int col = (rationalHorizontal + m);
         int row = (rationalVertical + n);
         if (row < 2)
@@ -1399,42 +1284,42 @@ void commitToPlayGrid(Tetrimino tetrimino)
 
 void moveTetrimino(Tetrimino tetrimino)
 {
-  readButtonStates();
-  if (upButtonState == LOW)
+ sillyGoose. readButtonStates();
+  if (sillyGoose.upButtonState == LOW)
   {
     letGoOfHardDrop = true;
   }
 
-  if (downButtonState == HIGH && gameAlive && tetriminoAlive)
+  if (sillyGoose.downButtonState == HIGH && gameAlive && tetriminoAlive)
   {
     //TODO - implement legit faster fall rules
     tryToMoveDown(tetrimino, true);
   }
-  if (upButtonState == HIGH && letGoOfHardDrop && gameAlive && tetriminoAlive)
+  if (sillyGoose.upButtonState == HIGH && letGoOfHardDrop && gameAlive && tetriminoAlive)
   {
     hardDrop(tetrimino);
   }
 
-  if (leftButtonState == HIGH && gameAlive && tetriminoAlive)
+  if (sillyGoose.leftButtonState == HIGH && gameAlive && tetriminoAlive)
   {
     tryToMoveLeft(tetrimino);
   }
-  if (rightButtonState == HIGH && gameAlive && tetriminoAlive)
+  if (sillyGoose.rightButtonState == HIGH && gameAlive && tetriminoAlive)
   {
     tryToMoveRight(tetrimino);
   }
 
-  if (aButtonState == HIGH && holdAvailable && gameAlive && tetriminoAlive)
+  if (sillyGoose.aButtonState == HIGH && holdAvailable && gameAlive && tetriminoAlive)
   {
     tetriminoInPlay = false;
   }
-  if (bButtonState == HIGH && letGoOfRotate && gameAlive && tetriminoAlive)
+  if (sillyGoose.bButtonState == HIGH && letGoOfRotate && gameAlive && tetriminoAlive)
   {
 
     letGoOfRotate = false;
     tryToRotate(tetrimino);
   }
-  if (bButtonState == LOW)
+  if (sillyGoose.bButtonState == LOW)
   {
     letGoOfRotate = true;
   }
@@ -1443,12 +1328,12 @@ void moveTetrimino(Tetrimino tetrimino)
 
 void hardDrop(Tetrimino tetrimino)
 {
-  int hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
+  int hypotheticalVerticalDotPosition = verticalDotPosition + sillyGoose.scaleDisplay;
   int counter = 0;
   while (!hitBottom(tetrimino, hypotheticalVerticalDotPosition) && !overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalDotPosition))
   {
     verticalDotPosition = hypotheticalVerticalDotPosition;
-    hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
+    hypotheticalVerticalDotPosition = verticalDotPosition + sillyGoose.scaleDisplay;
     counter++;
   }
 
@@ -1463,12 +1348,12 @@ void hardDrop(Tetrimino tetrimino)
 void ghostPositionUpdate(Tetrimino tetrimino)
 {
   verticalGhostPosition = verticalDotPosition;
-  int hypotheticalVerticalGhostPosition = verticalGhostPosition + multiplier;
+  int hypotheticalVerticalGhostPosition = verticalGhostPosition + sillyGoose.scaleDisplay;
 
   while (!hitBottom(tetrimino, hypotheticalVerticalGhostPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalGhostPosition)))
   {
     verticalGhostPosition = hypotheticalVerticalGhostPosition;
-    hypotheticalVerticalGhostPosition = verticalGhostPosition + multiplier;
+    hypotheticalVerticalGhostPosition = verticalGhostPosition + sillyGoose.scaleDisplay;
   }
 }
 
@@ -1482,12 +1367,12 @@ void updateGhost(Tetrimino tetrimino)
 void spawnGhost(Tetrimino tetrimino)
 {
   verticalGhostPosition = verticalDotPosition;
-  int hypotheticalVerticalGhostPosition = verticalGhostPosition + multiplier;
+  int hypotheticalVerticalGhostPosition = verticalGhostPosition + sillyGoose.scaleDisplay;
 
   while (!hitBottom(tetrimino, hypotheticalVerticalGhostPosition) && !(overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalGhostPosition)))
   {
     verticalGhostPosition = hypotheticalVerticalGhostPosition;
-    hypotheticalVerticalGhostPosition = verticalGhostPosition + multiplier;
+    hypotheticalVerticalGhostPosition = verticalGhostPosition + sillyGoose.scaleDisplay;
   }
   ghostColour(tetrimino);
 }
@@ -1496,7 +1381,7 @@ void tryToMoveDown(Tetrimino tetrimino, bool incrementScore)
 {
   //if the block settles above the visable line, end the game.
 
-  int hypotheticalVerticalDotPosition = verticalDotPosition + multiplier;
+  int hypotheticalVerticalDotPosition = verticalDotPosition + sillyGoose.scaleDisplay;
   if (hitBottom(tetrimino, hypotheticalVerticalDotPosition) || (overlapOfPlayGrid(tetrimino, horizontalDotPosition, hypotheticalVerticalDotPosition)))
   {
     tetriminoAlive = false;
@@ -1517,7 +1402,7 @@ void tryToRotate(Tetrimino tetrimino)
 {
 
   tetrimino.rotateGrid();
-  if (horizontalDotPosition + (tetrimino.blocksRight() * multiplier) >= linePosHorizontalMaxRight || horizontalDotPosition + (tetrimino.blocksLeft() * multiplier) <= linePosHorizontalMaxLeft)
+  if (horizontalDotPosition + (tetrimino.blocksRight() * sillyGoose.scaleDisplay) >= linePosHorizontalMaxRight || horizontalDotPosition + (tetrimino.blocksLeft() * sillyGoose.scaleDisplay) <= linePosHorizontalMaxLeft)
 
   {
     tetrimino.unrotateGrid();
@@ -1535,9 +1420,9 @@ void tryToRotate(Tetrimino tetrimino)
 
 void tryToMoveRight(Tetrimino tetrimino)
 {
-  int hypotheticalHorizontalDotPosition = horizontalDotPosition + multiplier;
+  int hypotheticalHorizontalDotPosition = horizontalDotPosition + sillyGoose.scaleDisplay;
 
-  if (hypotheticalHorizontalDotPosition + (tetrimino.blocksRight() * multiplier) > linePosHorizontalMaxRight)
+  if (hypotheticalHorizontalDotPosition + (tetrimino.blocksRight() * sillyGoose.scaleDisplay) > linePosHorizontalMaxRight)
 
   {
   }
@@ -1553,9 +1438,9 @@ void tryToMoveRight(Tetrimino tetrimino)
 
 void tryToMoveLeft(Tetrimino tetrimino)
 {
-  int hypotheticalHorizontalDotPosition = horizontalDotPosition - multiplier;
+  int hypotheticalHorizontalDotPosition = horizontalDotPosition - sillyGoose.scaleDisplay;
 
-  if (hypotheticalHorizontalDotPosition + (tetrimino.blocksLeft() * multiplier) < linePosHorizontalMaxLeft)
+  if (hypotheticalHorizontalDotPosition + (tetrimino.blocksLeft() * sillyGoose.scaleDisplay) < linePosHorizontalMaxLeft)
 
   {
   }
@@ -1571,7 +1456,7 @@ void tryToMoveLeft(Tetrimino tetrimino)
 
 bool hitBottom(Tetrimino tetrimino, int hypotheticalVerticalDotPosition)
 {
-  if (hypotheticalVerticalDotPosition + (tetrimino.blocksDown() * multiplier) > linePosVerticalMaxDown)
+  if (hypotheticalVerticalDotPosition + (tetrimino.blocksDown() * sillyGoose.scaleDisplay) > linePosVerticalMaxDown)
   {
     return true;
   }
@@ -1587,7 +1472,7 @@ bool overlapOfPlayGrid(Tetrimino tetrimino, int hypotheticalHorizontalDotPositio
 
       if (tetrimino.booleanOfGrid(m, n))
       {
-        if (playGrid[(((hypotheticalHorizontalDotPosition - linePosHorizontalMaxLeft) / multiplier) + m) + (tetrisGridCols * (numInvisableRows + ((hypotheticalVerticalDotPosition - linePosVerticalMaxUp) / multiplier) + n))] != 0)
+        if (playGrid[(((hypotheticalHorizontalDotPosition - linePosHorizontalMaxLeft) / sillyGoose.scaleDisplay) + m) + (tetrisGridCols * (numInvisableRows + ((hypotheticalVerticalDotPosition - linePosVerticalMaxUp) / sillyGoose.scaleDisplay) + n))] != 0)
         {
           return true;
         }
@@ -1659,11 +1544,11 @@ void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVe
   if (startHorizontalDotPosition > linePosHorizontalMaxRight)
   {
 
-    startHorizontalDotPosition = startHorizontalDotPosition + (0.5 * (4 - tetrimino.cols) * multiplier);
+    startHorizontalDotPosition = startHorizontalDotPosition + (0.5 * (4 - tetrimino.cols) * sillyGoose.scaleDisplay);
     if (tetrimino.rows != 4)
     {
-      startVerticalDotPosition = startVerticalDotPosition + multiplier;
-      startVerticalDotPosition = startVerticalDotPosition - (0.5 * multiplier);
+      startVerticalDotPosition = startVerticalDotPosition + sillyGoose.scaleDisplay;
+      startVerticalDotPosition = startVerticalDotPosition - (0.5 * sillyGoose.scaleDisplay);
     }
   }
 
@@ -1683,12 +1568,12 @@ void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVe
       }
       if (conditionalBoolean == trueOrFalse)
       {
-        if (startVerticalDotPosition + (multiplier * n) < linePosVerticalMaxUp)
+        if (startVerticalDotPosition + (sillyGoose.scaleDisplay * n) < linePosVerticalMaxUp)
         {
         }
         else
         {
-          TFTscreen.fillRect(startHorizontalDotPosition + 1 + (multiplier * m), startVerticalDotPosition + 1 + (multiplier * n), multiplier - 1, multiplier - 1, colour);
+          sillyGoose.TFTscreen.fillRect(startHorizontalDotPosition + 1 + (sillyGoose.scaleDisplay * m), startVerticalDotPosition + 1 + (sillyGoose.scaleDisplay * n), sillyGoose.scaleDisplay - 1, sillyGoose.scaleDisplay - 1, colour);
         }
       }
     }
@@ -1705,13 +1590,13 @@ void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVer
 
       if (tetrimino.booleanOfGrid(m, n) == trueOrFalse)
       {
-        TFTscreen.stroke(strokeColour);
-        if (startVerticalDotPosition + (multiplier * n) < linePosVerticalMaxUp)
+        sillyGoose.TFTscreen.stroke(strokeColour);
+        if (startVerticalDotPosition + (sillyGoose.scaleDisplay * n) < linePosVerticalMaxUp)
         {
         }
         else
         {
-          TFTscreen.rect(startHorizontalDotPosition + 1 + (multiplier * m), startVerticalDotPosition + 1 + (multiplier * n), multiplier - 1, multiplier - 1);
+         sillyGoose.TFTscreen.rect(startHorizontalDotPosition + 1 + (sillyGoose.scaleDisplay * m), startVerticalDotPosition + 1 + (sillyGoose.scaleDisplay * n), sillyGoose.scaleDisplay - 1, sillyGoose.scaleDisplay - 1);
         }
       }
     }

@@ -1,7 +1,7 @@
-#include <Arduino.h>
+
 #include "tetrimino.h"
 
-void Tetrimino::initialise(int gridPass[], int dim, uint16_t tetColour, int multiplier)
+void Tetrimino::initialise(int gridPass[], int dim, uint16_t tetColour, int scaleDisplay)
 {
     this->rows = dim;
     this->cols = dim;

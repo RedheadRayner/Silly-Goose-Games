@@ -1,9 +1,8 @@
-
-#ifndef MAIN_H
-#define MAIN_H
-
 #include "tetrimino.h"
+#include "sillyGoose.h"
 #include <Arduino.h>
+#include <SD.h>
+#include <SPI.h>
 
 void spawnTetrimino(Tetrimino tetrimino);
 
@@ -59,5 +58,3 @@ void scoreBoard(bool trueScore);
 char* position(int place);
 
 unsigned getNumberOfDigits(unsigned i);
-
-# endif
