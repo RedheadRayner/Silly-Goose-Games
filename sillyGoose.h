@@ -1,6 +1,5 @@
 #include <TFT.h> // Arduino LCD library
 #include <SD.h>
-#include <Arduino.h>
 
 /* TFT screen pin definitions */
 // TFT screen CS pin definition
@@ -65,7 +64,6 @@ class SillyGoose
 public:
     void initialise(int determinator);
 
-    void readButtonStates();
 
     // the multiplier to scale the gameplay depending on the screen resolution
     int scaleDisplay;
@@ -97,6 +95,30 @@ public:
     // the width of the screen (the longest dimension of the screen)
     int16_t screenLong;
 
+    // pixel height of text on the screen at text size 1
+    int textHeight;
+
+    // pixel width of text on the screen at text size 1
+    int textWidth;
+
+    // y position of the point in the middle of the screen
+    int verticalDotCentrePosition;
+
+    // x position of the point in the middle of the screen
+    int horizontalDotCentrePosition;
+
     // create an instance of the library for the TFT screen
     TFT TFTscreen = TFT(TFT_CS, TFT_DC, TFT_RST);
+
+    // creates an error screen with a message... (only one line of message, so must be short)
+    void errorScreen(char *message);
+
+    // creates selectable centred or right hand pushed text at a given height (doubles size for titles). When selected, it changes green and is underlined.
+    void structuredSelectableText(char *text, int height, bool selected, bool title, bool rightHandPushed);
+
+    // wait for the user to press the B button.
+void waitForB();
+
+// read the states of all buttons on silly goose.
+void readButtonStates();
 };

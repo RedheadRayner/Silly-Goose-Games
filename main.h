@@ -1,11 +1,9 @@
-#include "tetrimino.h"
-#include "sillyGoose.h"
 #include <Arduino.h>
 #include <SD.h>
 #include <SPI.h>
+#include "tetriminoCollection.h"
 
 void spawnTetrimino(Tetrimino tetrimino);
-
 void moveTetrimino(Tetrimino tetrimino);
 void fillInGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour);
 void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVerticalDotPosition, bool trueOrFalse, uint16_t colour);
@@ -36,7 +34,6 @@ void gameOver();
 void gameScreenSetup();
 int menuSetup();
 void enterMenu();
-char *newPlayer();
 void enterGameEndedPhase();
 void changeSelectionScoreArrows(int letterNum, bool up, uint16_t colour);
 void makeSelectionScoreArrows();
@@ -50,11 +47,6 @@ void updateScore();
 void updateLevel();
 void changeSelectionStartMenu(int selection);
 void changeSelectionScoreMenu(int selection);
-void waitForB();
-void structuredSelectableText(char *text, int height, bool selected, bool title, bool rightHandPushed);
-void readButtonStates();
-void errorScreen(char *message);
 void scoreBoard(bool trueScore);
 char* position(int place);
-
 unsigned getNumberOfDigits(unsigned i);
