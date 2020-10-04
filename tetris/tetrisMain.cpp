@@ -1,4 +1,4 @@
-#include "main.h"
+#include "tetrisMain.h"
 
 // the level of the player (to determine fall speed)
 int level;
