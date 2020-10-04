@@ -5,7 +5,7 @@ Welcome to my self-created game software. This code is intended to be uploaded t
 
 ## Tetris
 
-![Gameplay](https://github.com/RedheadRayner/Tetris/blob/master/tetris_in_gameplay.jpg)
+![Gameplay](https://github.com/RedheadRayner/Silly-Goose-Games/blob/master/tetris/tetris_in_gameplay.jpg)
 
 ## Features
 
