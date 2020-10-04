@@ -1,8 +1,11 @@
-# Tetris
+# Silly Goose Games
 
-Welcome to my handwritten tetris software. This code is intended to be uploaded to my personal PCB [Silly Goose](https://github.com/RedheadRayner/Silly-Goose).
 
-![Gameplay](https://github.com/RedheadRayner/Tetris/blob/master/tetris_in_gameplay.jpg)
+Welcome to my self-created game software. This code is intended to be uploaded to my personal PCB [Silly Goose](https://github.com/RedheadRayner/Silly-Goose).
+
+## Tetris
+
+![Gameplay](https://github.com/RedheadRayner/Silly-Goose-Games/blob/master/tetris/tetris_in_gameplay.jpg)
 
 ## Features
 
