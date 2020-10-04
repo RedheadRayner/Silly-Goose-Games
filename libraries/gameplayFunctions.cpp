@@ -603,4 +603,76 @@ void changeSelectionStartMenu(SillyGoose sillyGoose,int selection)
 
 }
 
+int playerSetup(SillyGoose sillyGoose, char* title)
+{
+  sillyGoose.TFTscreen.background(Black);
+  sillyGoose.structuredSelectableText(title, sillyGoose.verticalDotCentrePosition - (4 * sillyGoose.textHeight), false, true, false);
+
+  bool letGoOfUp = true;
+  bool letGoOfDown = true;
+
+  int selected = 1;
+  changeSelectionPlayerNumberMenu(sillyGoose,selected);
+
+  while (true)
+  {
+    sillyGoose.readButtonStates();
+
+    if (sillyGoose.downButtonState == HIGH && letGoOfDown)
+    {
+      if (selected < 2)
+      {
+        selected++;
+        changeSelectionPlayerNumberMenu(sillyGoose,selected);
+      }
+      letGoOfDown = false;
+    }
+    if (sillyGoose.upButtonState == HIGH && letGoOfUp)
+    {
+      if (selected > 1)
+      {
+        selected--;
+        changeSelectionPlayerNumberMenu(sillyGoose,selected);
+      }
+      letGoOfUp = false;
+    }
+
+    if (sillyGoose.aButtonState == HIGH)
+    {
+      return selected;
+    }
+    if (sillyGoose.upButtonState == LOW)
+    {
+      letGoOfUp = true;
+    }
+
+    if (sillyGoose.downButtonState == LOW)
+    {
+      letGoOfDown = true;
+    }
+
+    delay(50);
+  }
+}
+
+void changeSelectionPlayerNumberMenu(SillyGoose sillyGoose,int selection)
+{
+  switch (selection)
+  {
+  case 1:
+
+    sillyGoose.structuredSelectableText("ONE", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, true, false, false);
+    sillyGoose.structuredSelectableText("TWO", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, false, false, false);
+    break;
+  case 2:
+    sillyGoose.structuredSelectableText("ONE", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, false, false, false);
+    sillyGoose.structuredSelectableText("TWO", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, true, false, false);
+
+    break;
+  default:
+    sillyGoose.errorScreen("INVALID INT");
+  }
+
+}
+
 

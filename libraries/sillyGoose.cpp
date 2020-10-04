@@ -141,6 +141,46 @@ void SillyGoose::waitForB()
   }
 }
 
+void SillyGoose::waitForA()
+{
+  while (true)
+  {
+    aButtonState = digitalRead(A_BUTTON);
+
+    if (aButtonState == HIGH)
+    {
+      return;
+    }
+  }
+}
+
+
+void SillyGoose::waitForRight()
+{
+  while (true)
+  {
+    rightButtonState = digitalRead(RIGHT_BUTTON);
+
+    if (rightButtonState == HIGH)
+    {
+      return;
+    }
+  }
+}
+
+void SillyGoose::waitForLeft()
+{
+  while (true)
+  {
+    leftButtonState = digitalRead(LEFT_BUTTON);
+
+    if (leftButtonState == HIGH)
+    {
+      return;
+    }
+  }
+}
+
 
 
 

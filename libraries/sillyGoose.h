@@ -64,7 +64,6 @@ class SillyGoose
 public:
     void initialise(int determinator);
 
-
     // the multiplier to scale the gameplay depending on the screen resolution
     int scaleDisplay;
 
@@ -117,8 +116,17 @@ public:
     void structuredSelectableText(char *text, int height, bool selected, bool title, bool rightHandPushed);
 
     // wait for the user to press the B button.
-void waitForB();
+    void waitForB();
 
-// read the states of all buttons on silly goose.
-void readButtonStates();
+    // wait for the user to press the A button.
+    void waitForA();
+
+// wait for the user to press the right button.
+void waitForRight();
+
+// wait for the user to press the left button.
+void waitForLeft();
+
+    // read the states of all buttons on silly goose.
+    void readButtonStates();
 };

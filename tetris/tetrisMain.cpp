@@ -1,3 +1,4 @@
+#ifdef TETRIS
 #include "tetrisMain.h"
 
 // the level of the player (to determine fall speed)
@@ -837,3 +838,5 @@ void ghostGrid(Tetrimino tetrimino, int startHorizontalDotPosition, int startVer
     }
   }
 }
+
+#endif

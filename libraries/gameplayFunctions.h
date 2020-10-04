@@ -18,3 +18,5 @@ void changeSelectionScoreMenu(SillyGoose sillyGoose, int selection);
 void enterSettings(SillyGoose sillyGoose);
 int menuSetup(SillyGoose sillyGoose, char* title);
 void changeSelectionStartMenu(SillyGoose sillyGoose, int selection);
+int playerSetup(SillyGoose sillyGoose, char* title);
+void changeSelectionPlayerNumberMenu(SillyGoose sillyGoose, int selection);
