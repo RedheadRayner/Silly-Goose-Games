@@ -10,7 +10,7 @@ class Die {
     void initialise();
     DieFacet getRandomFace();
     DieFacet getSpecificFace(int faceValue);
-    vector<DieFacet> roll (SillyGoose sillyGoose);
+    vector<int> roll (SillyGoose sillyGoose);
     void displayRoll(vector<DieFacet> facets, SillyGoose sillyGoose);
 
 

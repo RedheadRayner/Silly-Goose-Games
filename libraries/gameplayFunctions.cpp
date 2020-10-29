@@ -1,12 +1,14 @@
-#include "gameplayFunctions.h"
+#include "GameplayFunctions.h"
+
+using namespace std;
 
 // Allows the player to create a name to save to the scoreboard.
 char *newPlayer(SillyGoose sillyGoose)
 {
     sillyGoose.TFTscreen.background(Black);
-    sillyGoose.structuredSelectableText("ENTER", sillyGoose.verticalDotCentrePosition - (7 * sillyGoose.textHeight), false, true, false);
-    sillyGoose.structuredSelectableText("YOUR", sillyGoose.verticalDotCentrePosition - (5 * sillyGoose.textHeight), false, true, false);
-    sillyGoose.structuredSelectableText("NAME", sillyGoose.verticalDotCentrePosition - (3 * sillyGoose.textHeight), false, true, false);
+    sillyGoose.structuredSelectableText("ENTER", sillyGoose.verticalDotCentrePosition - (7 * sillyGoose.textHeight), false, true, false,false,false);
+    sillyGoose.structuredSelectableText("YOUR", sillyGoose.verticalDotCentrePosition - (5 * sillyGoose.textHeight), false, true,false,false, false);
+    sillyGoose.structuredSelectableText("NAME", sillyGoose.verticalDotCentrePosition - (3 * sillyGoose.textHeight), false, true,false,false, false);
     char *characters[27] = {" ", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
     int letters[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     int charactSelec = 0;
@@ -117,8 +119,8 @@ void enterGameEndedPhase(SillyGoose sillyGoose, char *scoreFileName, int score)
     sillyGoose.TFTscreen.background(Black);
     char *name = newPlayer(sillyGoose);
     sillyGoose.TFTscreen.background(Black);
-    sillyGoose.structuredSelectableText("PLEASE", sillyGoose.verticalDotCentrePosition - (2 * sillyGoose.textHeight), false, true, false);
-    sillyGoose.structuredSelectableText("WAIT", sillyGoose.verticalDotCentrePosition, false, true, false);
+    sillyGoose.structuredSelectableText("PLEASE", sillyGoose.verticalDotCentrePosition - (2 * sillyGoose.textHeight), false, true,false,false, false);
+    sillyGoose.structuredSelectableText("WAIT", sillyGoose.verticalDotCentrePosition, false, true,false, false,false);
 
     int scoreLinesCounting = 0;
     String restOfFile = "";
@@ -180,15 +182,15 @@ void enterGameEndedPhase(SillyGoose sillyGoose, char *scoreFileName, int score)
     scoreFile.close();
     sillyGoose.TFTscreen.background(Black);
 
-    sillyGoose.structuredSelectableText("YOU ARE", sillyGoose.verticalDotCentrePosition - (3 * sillyGoose.textHeight), false, true, false);
+    sillyGoose.structuredSelectableText("YOU ARE", sillyGoose.verticalDotCentrePosition - (3 * sillyGoose.textHeight), false, true, false,false,false);
 
     char *positionText = position(place);
-    sillyGoose.structuredSelectableText(positionText, sillyGoose.verticalDotCentrePosition, false, true, false);
+    sillyGoose.structuredSelectableText(positionText, sillyGoose.verticalDotCentrePosition, false, true, false,false,false);
     free(positionText);
     free(name);
 
-    sillyGoose.structuredSelectableText("PRESS B", sillyGoose.verticalDotCentrePosition + (6 * sillyGoose.textHeight), false, false, false);
-    sillyGoose.structuredSelectableText("FOR SCORES", sillyGoose.verticalDotCentrePosition + (7 * sillyGoose.textHeight), false, false, false);
+    sillyGoose.structuredSelectableText("PRESS B", sillyGoose.verticalDotCentrePosition + (6 * sillyGoose.textHeight), false, false,false, false,false);
+    sillyGoose.structuredSelectableText("FOR SCORES", sillyGoose.verticalDotCentrePosition + (7 * sillyGoose.textHeight), false, false,false,false, false);
     sillyGoose.waitForB();
     scoreBoard(sillyGoose, scoreFileName, true, true);
 }
@@ -310,7 +312,7 @@ void scoreBoard(SillyGoose sillyGoose, char *scoreFileName, bool trueScore, bool
 
     int textY = 5;
     int positionOnBoard = 1;
-    sillyGoose.structuredSelectableText("SCORES", textY, false, true, false);
+    sillyGoose.structuredSelectableText("SCORES", textY, false, true, false,false,false);
 
     textY = sillyGoose.textHeight * 3;
 
@@ -353,8 +355,8 @@ void scoreBoard(SillyGoose sillyGoose, char *scoreFileName, bool trueScore, bool
             char pos[2];
             sprintf(pos, "%i", positionOnBoard);
             sillyGoose.TFTscreen.text(pos, 0, textY);
-            sillyGoose.structuredSelectableText(nameInFile, textY, false, false, false);
-            sillyGoose.structuredSelectableText(scoreInFile, textY, false, false, true);
+            sillyGoose.structuredSelectableText(nameInFile, textY, false, false, false,false,false);
+            sillyGoose.structuredSelectableText(scoreInFile, textY, false, false, true,false,false);
 
             textY = textY + sillyGoose.textHeight + 5;
             positionOnBoard++;
@@ -386,8 +388,8 @@ void scoreBoard(SillyGoose sillyGoose, char *scoreFileName, bool trueScore, bool
                     char pos[2];
                     sprintf(pos, "%i", positionOnBoard);
                     sillyGoose.TFTscreen.text(pos, 0, textY);
-                    sillyGoose.structuredSelectableText(nameInFile, textY, false, false, false);
-                    sillyGoose.structuredSelectableText(scoreInFile, textY, false, false, true);
+                    sillyGoose.structuredSelectableText(nameInFile, textY, false, false, false,false,false);
+                    sillyGoose.structuredSelectableText(scoreInFile, textY, false, false, true,false,false);
 
                     textY = textY + sillyGoose.textHeight + 5;
                     positionOnBoard++;
@@ -437,80 +439,10 @@ void enterScores(SillyGoose sillyGoose,char *scoreFileName)
 int scoreTypeSelection(SillyGoose sillyGoose)
 {
 
-  sillyGoose.structuredSelectableText("SCORE MODE", sillyGoose.verticalDotCentrePosition - (4 * sillyGoose.textHeight), false, true, false);
-
-  bool letGoOfUp = true;
-  bool letGoOfDown = true;
-
-  int selected = 0;
-  changeSelectionScoreMenu(sillyGoose,selected);
-
-  while (true)
-  {
-    sillyGoose.readButtonStates();
-
-    if (sillyGoose.downButtonState == HIGH && letGoOfDown)
-    {
-      if (selected < 1)
-      {
-        selected++;
-        changeSelectionScoreMenu(sillyGoose,selected);
-      }
-      letGoOfDown = false;
-    }
-    if (sillyGoose.upButtonState == HIGH && letGoOfUp)
-    {
-      if (selected > 0)
-      {
-        selected--;
-        changeSelectionScoreMenu(sillyGoose,selected);
-      }
-      letGoOfUp = false;
-    }
-
-    if (sillyGoose.aButtonState == HIGH)
-    {
-      return selected;
-    }
-    if (sillyGoose.upButtonState == LOW)
-    {
-      letGoOfUp = true;
-    }
-
-    if (sillyGoose.downButtonState == LOW)
-    {
-      letGoOfDown = true;
-    }
-
-    if (sillyGoose.bButtonState == HIGH)
-    {
-      return 2;
-    }
-
-    delay(50);
-  }
-}
-
-void changeSelectionScoreMenu(SillyGoose sillyGoose,int selection)
-{
-
-  switch (selection)
-  {
-  case 0:
-
-    sillyGoose.structuredSelectableText("TRUE", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, true, false, false);
-    sillyGoose.structuredSelectableText("PERSONAL BEST", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, false, false, false);
-
-    break;
-  case 1:
-    sillyGoose.structuredSelectableText("TRUE", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, false, false, false);
-    sillyGoose.structuredSelectableText("PERSONAL BEST", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, true, false, false);
-
-    break;
-
-  default:
-    sillyGoose.errorScreen("INVALID INT");
-  }
+   vector<string> items;
+  items.push_back("TRUE");
+  items.push_back("PERSONAL BEST");
+ return sillyGoose.menuSetup( "SCORE MODE", sillyGoose.verticalDotCentrePosition - (4 * sillyGoose.textHeight), items, sillyGoose.textHeight,false);
 }
 
 void enterSettings(SillyGoose sillyGoose)
@@ -523,156 +455,16 @@ void enterSettings(SillyGoose sillyGoose)
   sillyGoose.waitForB();
 }
 
-int menuSetup(SillyGoose sillyGoose, char* title)
-{
-  sillyGoose.TFTscreen.background(Black);
-  sillyGoose.structuredSelectableText(title, sillyGoose.verticalDotCentrePosition - (4 * sillyGoose.textHeight), false, true, false);
 
-  bool letGoOfUp = true;
-  bool letGoOfDown = true;
 
-  int selected = 0;
-  changeSelectionStartMenu(sillyGoose,selected);
-
-  while (true)
-  {
-    sillyGoose.readButtonStates();
-
-    if (sillyGoose.downButtonState == HIGH && letGoOfDown)
-    {
-      if (selected < 2)
-      {
-        selected++;
-        changeSelectionStartMenu(sillyGoose,selected);
-      }
-      letGoOfDown = false;
-    }
-    if (sillyGoose.upButtonState == HIGH && letGoOfUp)
-    {
-      if (selected > 0)
-      {
-        selected--;
-        changeSelectionStartMenu(sillyGoose,selected);
-      }
-      letGoOfUp = false;
-    }
-
-    if (sillyGoose.aButtonState == HIGH)
-    {
-      return selected;
-    }
-    if (sillyGoose.upButtonState == LOW)
-    {
-      letGoOfUp = true;
-    }
-
-    if (sillyGoose.downButtonState == LOW)
-    {
-      letGoOfDown = true;
-    }
-
-    delay(50);
-  }
+int playerSetup(SillyGoose sillyGoose)
+{  
+  vector<string> items;
+  items.push_back("ONE");
+  items.push_back("TWO");
+  items.push_back("THREE");
+ return sillyGoose.menuSetup( "PLAYERS", sillyGoose.verticalDotCentrePosition - (4 * sillyGoose.textHeight), items, sillyGoose.textHeight,false);
 }
 
-void changeSelectionStartMenu(SillyGoose sillyGoose,int selection)
-{
-  switch (selection)
-  {
-  case 0:
-
-    sillyGoose.structuredSelectableText("START", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, true, false, false);
-    sillyGoose.structuredSelectableText("SCORES", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, false, false, false);
-    sillyGoose.structuredSelectableText("SETTINGS", sillyGoose.verticalDotCentrePosition + (3 * sillyGoose.textHeight), false, false, false);
-
-    break;
-  case 1:
-    sillyGoose.structuredSelectableText("START", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, false, false, false);
-    sillyGoose.structuredSelectableText("SCORES", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, true, false, false);
-    sillyGoose.structuredSelectableText("SETTINGS", sillyGoose.verticalDotCentrePosition + (3 * sillyGoose.textHeight), false, false, false);
-
-    break;
-  case 2:
-    sillyGoose.structuredSelectableText("START", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, false, false, false);
-    sillyGoose.structuredSelectableText("SCORES", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, false, false, false);
-    sillyGoose.structuredSelectableText("SETTINGS", sillyGoose.verticalDotCentrePosition + (3 * sillyGoose.textHeight), true, false, false);
-    break;
-  default:
-    sillyGoose.errorScreen("INVALID INT");
-  }
-
-}
-
-int playerSetup(SillyGoose sillyGoose, char* title)
-{
-  sillyGoose.TFTscreen.background(Black);
-  sillyGoose.structuredSelectableText(title, sillyGoose.verticalDotCentrePosition - (4 * sillyGoose.textHeight), false, true, false);
-
-  bool letGoOfUp = true;
-  bool letGoOfDown = true;
-
-  int selected = 1;
-  changeSelectionPlayerNumberMenu(sillyGoose,selected);
-
-  while (true)
-  {
-    sillyGoose.readButtonStates();
-
-    if (sillyGoose.downButtonState == HIGH && letGoOfDown)
-    {
-      if (selected < 2)
-      {
-        selected++;
-        changeSelectionPlayerNumberMenu(sillyGoose,selected);
-      }
-      letGoOfDown = false;
-    }
-    if (sillyGoose.upButtonState == HIGH && letGoOfUp)
-    {
-      if (selected > 1)
-      {
-        selected--;
-        changeSelectionPlayerNumberMenu(sillyGoose,selected);
-      }
-      letGoOfUp = false;
-    }
-
-    if (sillyGoose.aButtonState == HIGH)
-    {
-      return selected;
-    }
-    if (sillyGoose.upButtonState == LOW)
-    {
-      letGoOfUp = true;
-    }
-
-    if (sillyGoose.downButtonState == LOW)
-    {
-      letGoOfDown = true;
-    }
-
-    delay(50);
-  }
-}
-
-void changeSelectionPlayerNumberMenu(SillyGoose sillyGoose,int selection)
-{
-  switch (selection)
-  {
-  case 1:
-
-    sillyGoose.structuredSelectableText("ONE", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, true, false, false);
-    sillyGoose.structuredSelectableText("TWO", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, false, false, false);
-    break;
-  case 2:
-    sillyGoose.structuredSelectableText("ONE", sillyGoose.verticalDotCentrePosition - sillyGoose.textHeight, false, false, false);
-    sillyGoose.structuredSelectableText("TWO", sillyGoose.verticalDotCentrePosition + sillyGoose.textHeight, true, false, false);
-
-    break;
-  default:
-    sillyGoose.errorScreen("INVALID INT");
-  }
-
-}
 
 

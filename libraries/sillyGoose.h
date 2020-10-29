@@ -1,5 +1,7 @@
 #include <TFT.h> // Arduino LCD library
 #include <SD.h>
+#include <vector>
+using namespace std;
 
 /* TFT screen pin definitions */
 // TFT screen CS pin definition
@@ -112,8 +114,8 @@ public:
     // creates an error screen with a message... (only one line of message, so must be short)
     void errorScreen(char *message);
 
-    // creates selectable centred or right hand pushed text at a given height (doubles size for titles). When selected, it changes green and is underlined.
-    void structuredSelectableText(char *text, int height, bool selected, bool title, bool rightHandPushed);
+    // creates selectable centred or right/left hand pushed text at a given height (doubles size for titles). When selected, it changes green and is underlined.
+    void structuredSelectableText(const char *text, int height, bool selected, bool title, bool rightHandPushed, bool leftHandPushed, bool invisible);
 
     // wait for the user to press the B button.
     void waitForB();
@@ -121,12 +123,28 @@ public:
     // wait for the user to press the A button.
     void waitForA();
 
-// wait for the user to press the right button.
-void waitForRight();
+    // wait for the user to press the right button.
+    void waitForRight();
 
-// wait for the user to press the left button.
-void waitForLeft();
+    // wait for the user to press the left button.
+    void waitForLeft();
 
     // read the states of all buttons on silly goose.
     void readButtonStates();
+
+    // Create a menu
+    int menuSetup( char *title, int menuStartPosition, vector <string> items, int gap, bool invisible);
+
+    // TODO
+    void initialiseMenu( int selectionsStartPosition, vector <string> items, int gap, bool invisible);
+
+    
+void initialiseMenuTuple( int selectionsStartPosition, vector <tuple <string, bool, string>> items, int gap);
+
+    int startMenu( char *title);
+
+    int menuOptions(int selectionsStart, vector <string> items, int gap, bool invisible);
+
+int menuOptionsTuple( int selectionsStart, vector <tuple <string, bool, string>> items, int gap);
+
 };

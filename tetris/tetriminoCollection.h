@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 #include "tetrimino.h"
-#include "libraries/gameplayFunctions.h"
+#include "gameplayFunctions.h"
 #include <algorithm>
 #include <vector>
 

@@ -1,5 +1,6 @@
 
-#include "sillyGoose.h"
+#include "SillyGoose.h"
+
 
 char *newPlayer(SillyGoose sillyGoose);
 
@@ -14,9 +15,5 @@ void checkForScores(SillyGoose sillyGoose, char *scoreFileName);
 void scoreBoard(SillyGoose sillyGoose, char *scoreFileName, bool trueScore, bool afterGame);
 void enterScores(SillyGoose sillyGoose, char *scoreFileName);
 int scoreTypeSelection(SillyGoose sillyGoose);
-void changeSelectionScoreMenu(SillyGoose sillyGoose, int selection);
 void enterSettings(SillyGoose sillyGoose);
-int menuSetup(SillyGoose sillyGoose, char* title);
-void changeSelectionStartMenu(SillyGoose sillyGoose, int selection);
 int playerSetup(SillyGoose sillyGoose, char* title);
-void changeSelectionPlayerNumberMenu(SillyGoose sillyGoose, int selection);

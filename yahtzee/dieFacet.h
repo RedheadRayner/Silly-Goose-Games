@@ -1,13 +1,6 @@
 
-#include "libraries/gameplayFunctions.h"
+#include "libraries/GameplayFunctions.h"
 #include <vector>
-extern "C"
-{
-#include <TFT.h> 
-#include "Arduino.h"
-#include "utility/Adafruit_GFX.h"
-}
-using namespace std;
 
 class DieFacet
 {
