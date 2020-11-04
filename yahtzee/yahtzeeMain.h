@@ -18,10 +18,12 @@ int calculateYahtzee(vector<int> roll);
 int calculateChance(vector<int> roll);
 
 int calculateScore(int i,vector<int> roll);
-int calculateUpper(vector<tuple <string, bool, string>> items, vector<int> roll, int upper);
-int calculateUpperTotal(vector<tuple <string, bool, string>> items);
-int calculateLowerTotal(vector<tuple <string, bool, string>> items);
+int calculateUpper(vector<int> roll, int upper);
+int calculateUpperTotal();
+int calculateLowerTotal();
 void enterScoreSection(vector<int> roll);
 string scoreToString(int score);
-void updateTuple(vector<tuple <string, bool, string>> items);
+void updateTuple(vector<int> roll);
+
+int dealWithEndOfRoll();
 
